@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata
+from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic
 
 # load .env file
 load_dotenv()
@@ -23,12 +23,19 @@ def slugify(text):
 def save_outputs(topic, blog, captions):
     slug = slugify(topic)
     if topic_already_exists(slug):
-        choice = input(f"⚠️ Topic '{topic}' already exists. (s)kip / (r)egenerate / (o)verwrite? ").lower()
-    if choice == "s":
-        print("⏭️ Skipped.")
-        exit()
-    elif choice == "r":
-        slug += "-alt"  # or just allow re-gen without saving
+        print(f"⚠️ Topic '{topic}' already exists.")
+
+        rewritten = rewrite_topic(topic)
+        print(f"🔁 Suggested alternative: {rewritten}")
+        
+        choice = input("(s)kip / (r)egenerate with suggested / (o)verwrite? ").lower()
+        if choice == "s":
+            print("⏭️ Skipped.")
+            return
+        elif choice == "r":
+            topic = rewritten
+            slug = slugify(topic)
+
 
     os.makedirs("blogs", exist_ok=True)
     os.makedirs("captions", exist_ok=True)

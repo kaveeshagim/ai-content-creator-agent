@@ -186,3 +186,13 @@ def generate_blog_metadata(blog):
     llm = ChatOpenAI()  # Initialize the LLM (ensure your environment is configured with API keys)
     metadata = llm.invoke(prompt.format_messages())
     return metadata.content
+
+def rewrite_topic(original_topic):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful assistant who rewrites blog topics to avoid duplication."),
+        ("human", f"Rewrite the following blog topic to make it unique, catchy, and different:\n\n{original_topic}")
+    ])
+
+    llm = ChatOpenAI()
+    response = llm.invoke(prompt.format_messages())
+    return response.content.strip()
