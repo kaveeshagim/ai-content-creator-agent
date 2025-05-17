@@ -28,7 +28,7 @@ def convert_markdown_to_html(markdown_text, title, slug):
 
     return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"
 
-def generate_rss_feed(blog_dir="blogs", html_dir="public_html", output="rss.xml", site_url="https://kaveeshagim.github.io/ai-content-creator-agent"):
+def generate_rss_feed(blog_dir="blogs", html_dir="docs", output="docs/rss.xml", site_url="https://kaveeshagim.github.io/ai-content-creator-agent"):
     rss = Element("rss", version="2.0")
     channel = SubElement(rss, "channel")
 

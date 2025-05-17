@@ -81,7 +81,7 @@ def convert_markdown_to_html(markdown_text, title, slug):
     with open(f"public_html/{slug}.html", "w", encoding="utf-8") as f:
         f.write(full_html)
 
-    return f"https://yourdomain.com/{slug}.html"  # Update later with real domain
+    return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"  # Update later with real domain
 
 # run this part if the script is executed directly
 if __name__ == "__main__":

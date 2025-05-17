@@ -2,25 +2,25 @@
 <rss version="2.0">
   <channel>
     <title>AI Content Creator Blog</title>
-    <link>https://yourdomain.com</link>
+    <link>https://kaveeshagim.github.io/ai-content-creator-agent</link>
     <description>Auto-generated blogs using GPT-4o</description>
     <item>
       <title>Benefits of Using Kubernetes in Startups</title>
-      <link>https://yourdomain.com/benefits-of-using-kubernetes-in-startups.html</link>
+      <link>https://kaveeshagim.github.io/ai-content-creator-agent/benefits-of-using-kubernetes-in-startups.html</link>
       <pubDate>Sat, 17 May 2025 20:19:15 +0530</pubDate>
-      <description>Read full article at https://yourdomain.com/benefits-of-using-kubernetes-in-startups.html</description>
+      <description>Read full article at https://kaveeshagim.github.io/ai-content-creator-agent/benefits-of-using-kubernetes-in-startups.html</description>
     </item>
     <item>
       <title>How AI is Revolutionizing Frontend Development in 2025</title>
-      <link>https://yourdomain.com/how-ai-is-revolutionizing-frontend-development-in-2025.html</link>
+      <link>https://kaveeshagim.github.io/ai-content-creator-agent/how-ai-is-revolutionizing-frontend-development-in-2025.html</link>
       <pubDate>Sat, 17 May 2025 21:13:15 +0530</pubDate>
-      <description>Read full article at https://yourdomain.com/how-ai-is-revolutionizing-frontend-development-in-2025.html</description>
+      <description>Read full article at https://kaveeshagim.github.io/ai-content-creator-agent/how-ai-is-revolutionizing-frontend-development-in-2025.html</description>
     </item>
     <item>
       <title>Why Developers Should Learn DevOps in 2025</title>
-      <link>https://yourdomain.com/why-developers-should-learn-devops-in-2025.html</link>
+      <link>https://kaveeshagim.github.io/ai-content-creator-agent/why-developers-should-learn-devops-in-2025.html</link>
       <pubDate>Sat, 17 May 2025 20:07:57 +0530</pubDate>
-      <description>Read full article at https://yourdomain.com/why-developers-should-learn-devops-in-2025.html</description>
+      <description>Read full article at https://kaveeshagim.github.io/ai-content-creator-agent/why-developers-should-learn-devops-in-2025.html</description>
     </item>
   </channel>
 </rss>
