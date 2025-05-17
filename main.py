@@ -1,9 +1,12 @@
 import os
 import re
+import markdown
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from utils import convert_markdown_to_html, generate_rss_feed
 
 # load .env file
 load_dotenv()
@@ -31,25 +34,54 @@ def save_outputs(topic, blog, captions):
 
     print(f"\n✅ Saved blog to blogs/{slug}.md")
     print(f"✅ Saved captions to captions/{slug}_captions.txt")
+    convert_markdown_to_html(blog, topic, slug)
+    generate_rss_feed()
 
 # function to generate blog content
 def generate_blog(topic):
-    system_message = SystemMessage(content="You are a professional blog writer who created engaging and informative tech blog posts.")
-    human_message = HumanMessage(content=f"Write a detailed blog post about: {topic}. Include an introduction, subheadings, bullet points, main content, and a conclusion. Use a friendly and engaging tone.")
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", "You are a professional tech blog writer. Your writing should be clear, informative, and easy to understand."),
+        ("human", "Write a blog post on the topic: '{topic}'. Include:\n- An engaging introduction\n- Subheadings with clear explanations\n- Bullet points when relevant\n- A strong conclusion.")
+    ])
 
-    response = llm([system_message, human_message])
+    prompt = prompt_template.format_messages(topic=topic)
+    response = llm.invoke(prompt)
     return response.content
+
 
 def generate_captions(topic):
-    system_message = SystemMessage(content="You are a social media content expert.")
-    human_message = HumanMessage(content=f"""Generate engaging captions for the topic: {topic}.
-Return:
-- A short, catchy tweet (max 280 characters)
-- A professional LinkedIn post (2-3 lines)
-- A fun Instagram caption with emojis
-""")
-    response = llm.invoke([system_message, human_message])
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", "You are a social media strategist."),
+        ("human", "Create engaging captions for the topic: '{topic}'\nReturn:\n- A short tweet\n- A LinkedIn post\n- An Instagram caption with emojis")
+    ])
+
+    prompt = prompt_template.format_messages(topic=topic)
+    response = llm.invoke(prompt)
     return response.content
+
+def convert_markdown_to_html(markdown_text, title, slug):
+    html_content = markdown.markdown(markdown_text)
+
+    # Basic HTML wrapper (can improve later)
+    full_html = f"""
+    <html>
+    <head>
+        <title>{title}</title>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        <h1>{title}</h1>
+        {html_content}
+    </body>
+    </html>
+    """
+
+    # Save it
+    os.makedirs("public_html", exist_ok=True)
+    with open(f"public_html/{slug}.html", "w", encoding="utf-8") as f:
+        f.write(full_html)
+
+    return f"https://yourdomain.com/{slug}.html"  # Update later with real domain
 
 # run this part if the script is executed directly
 if __name__ == "__main__":
