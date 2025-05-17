@@ -28,7 +28,12 @@ def convert_markdown_to_html(markdown_text, title, slug):
 
     return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"
 
-def generate_rss_feed(blog_dir="blogs", html_dir="docs", output="docs/rss.xml", site_url="https://kaveeshagim.github.io/ai-content-creator-agent"):
+def generate_rss_feed_with_content(
+    blog_dir="blogs",
+    html_dir="docs",
+    output="docs/rss.xml",
+    site_url="https://kaveeshagim.github.io/ai-content-creator-agent"
+):
     rss = Element("rss", version="2.0")
     channel = SubElement(rss, "channel")
 
@@ -40,25 +45,26 @@ def generate_rss_feed(blog_dir="blogs", html_dir="docs", output="docs/rss.xml", 
     for filename in os.listdir(blog_dir):
         if filename.endswith(".md"):
             slug = filename[:-3]
-            html_link = f"{site_url}/{slug}.html"
-
-            # Get file modified time as pubDate
             filepath = os.path.join(blog_dir, filename)
+            html_link = f"{site_url}/{slug}.html"
             mod_time = datetime.datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%a, %d %b %Y %H:%M:%S +0530")
 
             with open(filepath, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-                title = lines[0].replace("#", "").strip() if lines else slug
+                md_content = f.read()
+
+            title = md_content.splitlines()[0].replace("#", "").strip()
+            html_content = markdown.markdown(md_content)
 
             item = SubElement(channel, "item")
             SubElement(item, "title").text = title
             SubElement(item, "link").text = html_link
             SubElement(item, "pubDate").text = mod_time
+            SubElement(item, "guid").text = html_link
             SubElement(item, "description").text = f"Read full article at {html_link}"
+            SubElement(item, "content:encoded").text = f"<![CDATA[{html_content}]]>"
 
-    # Save to rss.xml
     pretty_xml = parseString(tostring(rss)).toprettyxml(indent="  ")
-    with open("docs/rss.xml", "w", encoding="utf-8") as f:
+    with open(output, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
 
-    print(f"✅ RSS feed saved as {output}")
+    print(f"✅ RSS feed with content saved as {output}")
