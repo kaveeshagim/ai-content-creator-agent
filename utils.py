@@ -2,6 +2,7 @@ import os
 import datetime
 import markdown
 import json
+import subprocess
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
 from langchain_core.prompts import ChatPromptTemplate
@@ -298,3 +299,12 @@ def create_share_banner(title, slug):
     path = f"banners/{slug}.png"
     img.save(path)
     return path
+
+def auto_git_push():
+    try:
+        subprocess.run(["git", "add", "docs"], check=True)
+        subprocess.run(["git", "commit", "-m", "🤖 Auto update: new blog and RSS"], check=True)
+        subprocess.run(["git", "push"], check=True)
+        print("✅ Git push complete.")
+    except subprocess.CalledProcessError as e:
+        print("❌ Git error:", e)

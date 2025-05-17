@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner
+from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner,auto_git_push
 
 # load .env file
 load_dotenv()
@@ -71,13 +71,12 @@ def save_outputs(topic, blog, captions):
     metadata["linkedin_post"] = generate_linkedin_post(blog)
     metadata["share_banner"] = create_share_banner(title=topic, slug=slug)
 
-
-
     os.makedirs("metadata", exist_ok=True)
     with open(f"metadata/{slug}.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
 
     print(f"✅ Metadata saved to metadata/{slug}.json")
+    auto_git_push()
 
 # function to generate blog content
 def generate_blog(topic):
