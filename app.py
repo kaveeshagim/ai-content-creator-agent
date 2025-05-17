@@ -66,7 +66,7 @@ if topic and st.button("Generate Content"):
     st.success("✅ Content generated!")
 
     st.subheader("📝 Blog Post")
-    
+
     # Show reading time if available
     meta_path = f"metadata/{slugify(topic)}.json"
     if os.path.exists(meta_path):
@@ -88,6 +88,21 @@ if topic and st.button("Generate Content"):
                 st.subheader("📌 Blog Summary")
                 st.markdown(data["summary_bullets"])
 
+    if "tweet_thread" in data:
+        st.subheader("🐦 Tweet Thread")
+        st.text(data["tweet_thread"])
+        st.download_button("📥 Download Tweet Thread (.txt)", data["tweet_thread"], file_name=f"{slugify(topic)}_thread.txt")
+
+    if "linkedin_post" in data:
+        st.subheader("📰 LinkedIn Post")
+        st.text_area("Preview", data["linkedin_post"], height=200)
+        st.download_button("📥 Download LinkedIn Post (.txt)", data["linkedin_post"], file_name=f"{slugify(topic)}_linkedin.txt")
+
+    if "share_banner" in data and os.path.exists(data["share_banner"]):
+        st.subheader("🖼️ Social Share Banner")
+        st.image(data["share_banner"])
+        with open(data["share_banner"], "rb") as f:
+            st.download_button("📥 Download Banner (.png)", f, file_name=f"{slugify(topic)}.png")
 
     st.download_button("📥 Download Blog (.md)", blog, file_name=f"{topic}.md")
     st.download_button("📥 Download Captions (.txt)", captions, file_name=f"{topic}_captions.txt")

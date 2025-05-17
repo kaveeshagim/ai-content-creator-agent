@@ -6,6 +6,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from PIL import Image, ImageDraw, ImageFont
 
 TOPIC_MEMORY_FILE = "memory/topics.json"
 
@@ -222,3 +223,78 @@ def estimate_reading_time(blog_text, wpm=200):
     minutes = max(1, round(word_count / wpm))
     return f"{minutes} min read"
 
+def generate_tweet_thread(blog_text):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a social media strategist who converts blogs into engaging Twitter threads. Use short sentences, emojis, and hooks."),
+        ("human", f"Convert the following blog into a 5-7 tweet thread:\n\n{blog_text}")
+    ])
+
+    llm = ChatOpenAI()
+    response = llm.invoke(prompt.format_messages())
+    return response.content.strip()
+
+def generate_linkedin_post(blog_text):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a social media assistant that writes professional LinkedIn posts based on blog content. Include a hook, a 2–3 line summary, emojis, and a soft call-to-action at the end."),
+        ("human", f"Write a LinkedIn post based on this blog:\n\n{blog_text}")
+    ])
+
+    llm = ChatOpenAI()
+    response = llm.invoke(prompt.format_messages())
+    return response.content.strip()
+
+from PIL import Image, ImageDraw, ImageFont
+
+def create_share_banner(title, slug):
+    os.makedirs("banners", exist_ok=True)
+
+    width, height = 1200, 630
+    background_color = (15, 15, 20)  # deep tech gray
+    accent_color = (80, 160, 255)    # soft blue
+
+    img = Image.new("RGB", (width, height), color=background_color)
+    draw = ImageDraw.Draw(img)
+
+    # Load clean sans-serif fonts
+    try:
+        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 72)
+        footer_font = ImageFont.truetype("DejaVuSans.ttf", 36)
+    except:
+        title_font = ImageFont.load_default()
+        footer_font = ImageFont.load_default()
+
+    # Dynamic title wrapping
+    max_width = width - 100
+    words = title.split()
+    lines = []
+    current_line = ""
+
+    for word in words:
+        test_line = f"{current_line} {word}".strip()
+        w = draw.textlength(test_line, font=title_font)
+        if w <= max_width:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word
+    lines.append(current_line)
+
+    # Title text positioning
+    line_height = title_font.getbbox("A")[3] - title_font.getbbox("A")[1] + 10
+    total_height = len(lines) * line_height
+    y = (height - total_height) // 2
+
+    for line in lines:
+        w = draw.textlength(line, font=title_font)
+        x = (width - w) // 2
+        draw.text((x, y), line, font=title_font, fill=(240, 240, 240))
+        y += line_height
+
+    # Footer
+    footer = "⚙️ AI Content Creator"
+    fw = draw.textlength(footer, font=footer_font)
+    draw.text(((width - fw) // 2, height - 60), footer, font=footer_font, fill=accent_color)
+
+    path = f"banners/{slug}.png"
+    img.save(path)
+    return path

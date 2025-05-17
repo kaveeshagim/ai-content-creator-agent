@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time
+from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner
 
 # load .env file
 load_dotenv()
@@ -54,9 +54,23 @@ def save_outputs(topic, blog, captions):
     add_topic_to_memory(slug)
     meta = generate_blog_metadata(blog)
     summary = summarize_blog(blog)
-    metadata = json.loads(meta)
+    try:
+        metadata = json.loads(meta)
+    except json.JSONDecodeError:
+        # Try fixing common trailing comma errors
+        meta_fixed = re.sub(r",\s*([}\]])", r"\1", meta)
+        try:
+            metadata = json.loads(meta_fixed)
+        except json.JSONDecodeError as e:
+            print("❌ Failed to parse metadata JSON:", e)
+            metadata = {}
+
     metadata["summary_bullets"] = summary
     metadata["reading_time"] = estimate_reading_time(blog)
+    metadata["tweet_thread"] = generate_tweet_thread(blog)
+    metadata["linkedin_post"] = generate_linkedin_post(blog)
+    metadata["share_banner"] = create_share_banner(title=topic, slug=slug)
+
 
 
     os.makedirs("metadata", exist_ok=True)
