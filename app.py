@@ -4,6 +4,7 @@ import json
 from dotenv import load_dotenv
 from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
 from utils import rewrite_topic, generate_trending_topics
+from agents import writer_agent, seo_agent, social_agent, editor_agent
 load_dotenv()
 
 st.set_page_config(page_title="AI Content Creator", layout="wide")
@@ -59,8 +60,13 @@ if topic:
 if topic and st.button("Generate Content"):
     with st.spinner("Generating blog and captions..."):
 
-        blog = generate_blog(topic)
+        # blog = generate_blog(topic)
+
+        blog = writer_agent(topic)
         captions = generate_captions(topic)
+        seo_data = seo_agent(topic)
+
+
         save_outputs(topic, blog, captions)
 
     st.success("✅ Content generated!")
