@@ -77,8 +77,8 @@ def convert_markdown_to_html(markdown_text, title, slug):
     """
 
     # Save it
-    os.makedirs("public_html", exist_ok=True)
-    with open(f"public_html/{slug}.html", "w", encoding="utf-8") as f:
+    os.makedirs("docs", exist_ok=True)
+    with open(f"docs/{slug}.html", "w", encoding="utf-8") as f:
         f.write(full_html)
 
     return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"  # Update later with real domain
