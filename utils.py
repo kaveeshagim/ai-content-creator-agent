@@ -22,13 +22,13 @@ def convert_markdown_to_html(markdown_text, title, slug):
     """
 
     # Save it
-    os.makedirs("public_html", exist_ok=True)
-    with open(f"public_html/{slug}.html", "w", encoding="utf-8") as f:
+    os.makedirs("docs", exist_ok=True)
+    with open(f"docs/{slug}.html", "w", encoding="utf-8") as f:
         f.write(full_html)
 
-    return f"https://yourdomain.com/{slug}.html"  # Update later with real domain
+    return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"
 
-def generate_rss_feed(blog_dir="blogs", html_dir="public_html", output="rss.xml", site_url="https://yourdomain.com"):
+def generate_rss_feed(blog_dir="blogs", html_dir="public_html", output="rss.xml", site_url="https://kaveeshagim.github.io/ai-content-creator-agent"):
     rss = Element("rss", version="2.0")
     channel = SubElement(rss, "channel")
 
@@ -58,7 +58,7 @@ def generate_rss_feed(blog_dir="blogs", html_dir="public_html", output="rss.xml"
 
     # Save to rss.xml
     pretty_xml = parseString(tostring(rss)).toprettyxml(indent="  ")
-    with open(output, "w", encoding="utf-8") as f:
+    with open("docs/rss.xml", "w", encoding="utf-8") as f:
         f.write(pretty_xml)
 
     print(f"✅ RSS feed saved as {output}")
