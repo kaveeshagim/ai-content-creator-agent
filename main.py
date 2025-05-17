@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed
+from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata
 
 # load .env file
 load_dotenv()
@@ -22,7 +22,14 @@ def slugify(text):
 
 def save_outputs(topic, blog, captions):
     slug = slugify(topic)
-    
+    if topic_already_exists(slug):
+        choice = input(f"⚠️ Topic '{topic}' already exists. (s)kip / (r)egenerate / (o)verwrite? ").lower()
+    if choice == "s":
+        print("⏭️ Skipped.")
+        exit()
+    elif choice == "r":
+        slug += "-alt"  # or just allow re-gen without saving
+
     os.makedirs("blogs", exist_ok=True)
     os.makedirs("captions", exist_ok=True)
 
@@ -36,6 +43,14 @@ def save_outputs(topic, blog, captions):
     print(f"✅ Saved captions to captions/{slug}_captions.txt")
     convert_markdown_to_html(blog, topic, slug)
     generate_rss_feed()
+    add_topic_to_memory(slug)
+    meta = generate_blog_metadata(blog)
+
+    os.makedirs("metadata", exist_ok=True)
+    with open(f"metadata/{slug}.json", "w", encoding="utf-8") as f:
+        f.write(meta)
+
+    print(f"✅ Metadata saved to metadata/{slug}.json")
 
 # function to generate blog content
 def generate_blog(topic):
