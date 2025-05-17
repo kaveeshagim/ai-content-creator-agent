@@ -1,12 +1,13 @@
 import os
 import re
 import markdown
+import json
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic
+from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time
 
 # load .env file
 load_dotenv()
@@ -52,10 +53,15 @@ def save_outputs(topic, blog, captions):
     generate_rss_feed()
     add_topic_to_memory(slug)
     meta = generate_blog_metadata(blog)
+    summary = summarize_blog(blog)
+    metadata = json.loads(meta)
+    metadata["summary_bullets"] = summary
+    metadata["reading_time"] = estimate_reading_time(blog)
+
 
     os.makedirs("metadata", exist_ok=True)
     with open(f"metadata/{slug}.json", "w", encoding="utf-8") as f:
-        f.write(meta)
+        json.dump(metadata, f, indent=2)
 
     print(f"✅ Metadata saved to metadata/{slug}.json")
 

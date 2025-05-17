@@ -196,3 +196,29 @@ def rewrite_topic(original_topic):
     llm = ChatOpenAI()
     response = llm.invoke(prompt.format_messages())
     return response.content.strip()
+
+def generate_trending_topics(n=5, category="tech"):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a creative blog strategist. Return a numbered list of blog topic ideas. Keep them timely, relevant, and niche-aligned."),
+        ("human", f"Suggest {n} unique, creative, and current blog topics in the '{category}' space.")
+    ])
+
+    llm = ChatOpenAI()
+    response = llm.invoke(prompt.format_messages())
+    return response.content.strip()
+
+def summarize_blog(blog):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an assistant that summarizes blog posts. Output a bullet list of 2–3 short, punchy key points."),
+        ("human", f"Summarize this blog post:\n\n{blog}")
+    ])
+
+    llm = ChatOpenAI()
+    response = llm.invoke(prompt.format_messages())
+    return response.content.strip()
+
+def estimate_reading_time(blog_text, wpm=200):
+    word_count = len(blog_text.split())
+    minutes = max(1, round(word_count / wpm))
+    return f"{minutes} min read"
+
