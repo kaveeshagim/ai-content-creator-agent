@@ -28,13 +28,17 @@ def convert_markdown_to_html(markdown_text, title, slug):
 
     return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"
 
-def generate_rss_feed_with_content(
+def generate_rss_feed(
     blog_dir="blogs",
     html_dir="docs",
     output="docs/rss.xml",
     site_url="https://kaveeshagim.github.io/ai-content-creator-agent"
 ):
-    rss = Element("rss", version="2.0")
+    rss = Element("rss", {
+        "version": "2.0",
+        "xmlns:content": "http://purl.org/rss/1.0/modules/content/"
+    })
+
     channel = SubElement(rss, "channel")
 
     # Feed header
