@@ -1,0 +1,29 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+
+# Environment variables
+.env
+
+# VS Code settings
+.vscode/
+
+# macOS system files
+.DS_Store
+
+# Python packages
+*.egg-info/
+dist/
+build/
+
+# Log & debug files
+*.log
+
+# Output folders
+blogs/
+captions/
