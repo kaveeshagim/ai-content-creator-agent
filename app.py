@@ -4,7 +4,7 @@ import json
 from dotenv import load_dotenv
 from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
 from utils import rewrite_topic, generate_trending_topics
-from agents import writer_agent, seo_agent, social_agent, editor_agent,outliner_agent,proofreader_agent
+from agents import writer_agent, seo_agent, social_agent, editor_agent, outliner_agent, proofreader_agent, citation_inserter_agent
 load_dotenv()
 
 st.set_page_config(page_title="AI Content Creator", layout="wide")
@@ -85,14 +85,10 @@ if topic and st.button("Generate Content"):
 
         raw_blog = writer_agent(topic, tone, audience, outline_input)
         blog = proofreader_agent(raw_blog)
-
+        citations = citation_inserter_agent(blog)
         captions = generate_captions(topic)
-        seo_data = seo_agent(topic)
 
-
-
-
-        save_outputs(topic, blog, captions)
+        save_outputs(topic, blog, captions,citations)
 
     st.success("✅ Content generated!")
 
@@ -115,37 +111,41 @@ if topic and st.button("Generate Content"):
         with open(meta_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-            if "reading_time" in data:
-                st.caption(f"⏱ {data['reading_time']}")
+            # if "reading_time" in data:
+            #     st.caption(f"⏱ {data['reading_time']}")
 
-    st.subheader("📣 Social Media Captions")
-    st.text(captions)
+    # st.subheader("📣 Social Media Captions")
+    # st.text(captions)
 
-    # Show blog summary if exists
-    meta_path = f"metadata/{slugify(topic)}.json"
-    if os.path.exists(meta_path):
-        with open(meta_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            
-            if "summary_bullets" in data:
-                st.subheader("📌 Blog Summary")
-                st.markdown(data["summary_bullets"])
+        if "reading_time" in data:
+            st.caption(f"⏱ {data['reading_time']}")
 
-    if "tweet_thread" in data:
-        st.subheader("🐦 Tweet Thread")
-        st.text(data["tweet_thread"])
-        st.download_button("📥 Download Tweet Thread (.txt)", data["tweet_thread"], file_name=f"{slugify(topic)}_thread.txt")
+        if "citations" in data:
+            st.subheader("🔗 Suggested Citations")
+            st.markdown(data["citations"])
+                
+        if "summary_bullets" in data:
+            st.subheader("📌 Blog Summary")
+            st.markdown(data["summary_bullets"])
 
-    if "linkedin_post" in data:
-        st.subheader("📰 LinkedIn Post")
-        st.text_area("Preview", data["linkedin_post"], height=200)
-        st.download_button("📥 Download LinkedIn Post (.txt)", data["linkedin_post"], file_name=f"{slugify(topic)}_linkedin.txt")
+        st.subheader("📣 Social Media Captions")
+        st.text(captions)
 
-    if "share_banner" in data and os.path.exists(data["share_banner"]):
-        st.subheader("🖼️ Social Share Banner")
-        st.image(data["share_banner"])
-        with open(data["share_banner"], "rb") as f:
-            st.download_button("📥 Download Banner (.png)", f, file_name=f"{slugify(topic)}.png")
+        if "tweet_thread" in data:
+            st.subheader("🐦 Tweet Thread")
+            st.text(data["tweet_thread"])
+            st.download_button("📥 Download Tweet Thread (.txt)", data["tweet_thread"], file_name=f"{slugify(topic)}_thread.txt")
+
+        if "linkedin_post" in data:
+            st.subheader("📰 LinkedIn Post")
+            st.text_area("Preview", data["linkedin_post"], height=200)
+            st.download_button("📥 Download LinkedIn Post (.txt)", data["linkedin_post"], file_name=f"{slugify(topic)}_linkedin.txt")
+
+        if "share_banner" in data and os.path.exists(data["share_banner"]):
+            st.subheader("🖼️ Social Share Banner")
+            st.image(data["share_banner"])
+            with open(data["share_banner"], "rb") as f:
+                st.download_button("📥 Download Banner (.png)", f, file_name=f"{slugify(topic)}.png")
 
     st.download_button("📥 Download Blog (.md)", blog, file_name=f"{topic}.md")
     st.download_button("📥 Download Captions (.txt)", captions, file_name=f"{topic}_captions.txt")

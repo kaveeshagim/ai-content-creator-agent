@@ -28,7 +28,7 @@ def writer_agent(topic, tone="professional", audience="general audience", outlin
             "human",
             f"Write a blog on the topic: {topic}. Include:\n"
             "- A compelling introduction\n"
-            "- Multiple subheadings\n"
+            "- Subheadings with clear explanations\n"
             "- Bullet points where useful\n"
             "- A strong closing summary."
         ))
@@ -71,5 +71,12 @@ def proofreader_agent(blog):
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a professional blog proofreader and editor. Improve grammar, clarity, and flow without changing the meaning or tone."),
         ("human", f"Proofread and polish the following blog content:\n\n{blog}")
+    ])
+    return llm.invoke(prompt.format_messages()).content.strip()
+
+def citation_inserter_agent(blog):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a technical research assistant. Read the blog and suggest 3–5 relevant citation links (preferably real or realistic-looking) to support claims or expand reading."),
+        ("human", f"Suggest citations for the following blog:\n\n{blog}\n\nFormat as:\n- [Title](URL) — Short context")
     ])
     return llm.invoke(prompt.format_messages()).content.strip()

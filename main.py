@@ -22,7 +22,7 @@ llm = ChatOpenAI(model_name="gpt-4o", temperature=0.5, max_tokens=800, openai_ap
 def slugify(text):
     return re.sub(r'[\W_]+', '-', text.lower()).strip('-')
 
-def save_outputs(topic, blog, captions):
+def save_outputs(topic, blog, captions,citations):
     slug = slugify(topic)
     if topic_already_exists(slug):
         print(f"⚠️ Topic '{topic}' already exists.")
@@ -72,6 +72,7 @@ def save_outputs(topic, blog, captions):
             print("❌ Failed to parse metadata JSON:", e)
             metadata = {}
 
+    metadata["citations"] = citations or "No citations available."
     metadata["summary_bullets"] = summary
     metadata["reading_time"] = estimate_reading_time(blog)
     metadata["tweet_thread"] = generate_tweet_thread(blog)
