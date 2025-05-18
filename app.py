@@ -4,13 +4,32 @@ import json
 from dotenv import load_dotenv
 from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
 from utils import rewrite_topic, generate_trending_topics
-from agents import writer_agent, seo_agent, social_agent, editor_agent
+from agents import writer_agent, seo_agent, social_agent, editor_agent,outliner_agent,proofreader_agent
 load_dotenv()
 
 st.set_page_config(page_title="AI Content Creator", layout="wide")
 st.title("🧠 AI Content Creator Agent")
 
 topic = st.text_input("Enter a blog topic", st.session_state.get("topic", ""))
+tone = st.selectbox(
+    "Select tone/style",
+    ["professional", "casual", "witty", "inspirational", "conversational"],
+    index=0
+)
+audience = st.selectbox(
+    "Select target audience",
+    ["general audience", "beginners", "developers", "business professionals", "CTOs", "students"],
+    index=0
+)
+
+if topic:
+    if st.checkbox("🧠 Show AI-generated outline before writing"):
+        from agents import outliner_agent
+
+        with st.spinner("Thinking through the structure..."):
+            generated_outline = outliner_agent(topic, audience)
+            outline_input = st.text_area("📋 Edit Outline", value=generated_outline, height=300)
+
 
 with st.expander("📈 Need ideas? Generate trending topics"):
     category = st.selectbox("Choose category", ["tech", "ai", "devops", "startups", "webdev"])
@@ -61,26 +80,43 @@ if topic and st.button("Generate Content"):
     with st.spinner("Generating blog and captions..."):
 
         # blog = generate_blog(topic)
+        if "outline_input" not in locals():
+            outline_input = None
 
-        blog = writer_agent(topic)
+        raw_blog = writer_agent(topic, tone, audience, outline_input)
+        blog = proofreader_agent(raw_blog)
+
         captions = generate_captions(topic)
         seo_data = seo_agent(topic)
+
+
 
 
         save_outputs(topic, blog, captions)
 
     st.success("✅ Content generated!")
 
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("✍️ Raw Draft (Writer Agent)")
+        st.markdown(raw_blog)
+
+    with col2:
+        st.subheader("🧼 Polished Draft (Proofreader Agent)")
+        st.markdown(blog)
+
     st.subheader("📝 Blog Post")
+    st.markdown(blog)
 
     # Show reading time if available
     meta_path = f"metadata/{slugify(topic)}.json"
     if os.path.exists(meta_path):
         with open(meta_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+
             if "reading_time" in data:
                 st.caption(f"⏱ {data['reading_time']}")
-    st.markdown(blog)
 
     st.subheader("📣 Social Media Captions")
     st.text(captions)
@@ -90,6 +126,7 @@ if topic and st.button("Generate Content"):
     if os.path.exists(meta_path):
         with open(meta_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+            
             if "summary_bullets" in data:
                 st.subheader("📌 Blog Summary")
                 st.markdown(data["summary_bullets"])
