@@ -1,6 +1,8 @@
 import os
 import streamlit as st
 import json
+import pandas as pd
+import calplot
 from datetime import datetime
 from dotenv import load_dotenv
 from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
@@ -215,9 +217,13 @@ elif page == "📅 Calendar View":
         st.info("No blogs generated yet.")
 
 elif page == "📊 MCP Analytics Dashboard":
+    import matplotlib.pyplot as plt
+    from collections import Counter
+    from datetime import datetime
+
     st.header("📊 AI Content Creator Analytics")
 
-    # Load all metadata files
+    # Load all metadata
     metadata_dir = "metadata"
     all_posts = []
 
@@ -231,31 +237,122 @@ elif page == "📊 MCP Analytics Dashboard":
                 data["date"] = datetime.fromtimestamp(os.path.getmtime(path))
                 all_posts.append(data)
 
-    st.success(f"✅ Loaded {len(all_posts)} posts")
+    export_data = []
+    for post in all_posts:
+        export_data.append({
+            "Title": post.get("slug", "").replace("-", " ").title(),
+            "Date": post.get("date").strftime("%Y-%m-%d"),
+            "Reading Time": post.get("reading_time", "N/A"),
+            "Tags": ", ".join(post.get("seo_tags", [])),
+            "Summary": post.get("summary_bullets", ""),
+            "Link": f"https://kaveeshagim.github.io/ai-content-creator-agent/{post['slug']}.html"
+        })
 
-    col1, col2, col3 = st.columns(3)
+    df_export = pd.DataFrame(export_data)
 
-    # Total posts
-    col1.metric("Total Posts", len(all_posts))
+    st.success(f"✅ Loaded {len(all_posts)} blog posts")
 
-    # Average reading time
-    try:
-        avg_time = sum(int(post["reading_time"].split()[0]) for post in all_posts if "reading_time" in post) / len(all_posts)
-        col2.metric("Avg Reading Time", f"{round(avg_time)} min")
-    except:
-        col2.metric("Avg Reading Time", "N/A")
+    # CSV download button
+    csv = df_export.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "📥 Download All Metadata as CSV",
+        csv,
+        file_name="blog_metadata.csv",
+        mime="text/csv"
+    )
 
-    # Total unique tags
-    all_tags = [tag for post in all_posts if "seo_tags" in post for tag in post["seo_tags"]]
-    col3.metric("Unique Tags Used", len(set(all_tags)))
+    st.subheader("📊 Blog Generation Trends")
 
-    st.markdown("## 📝 Blog Archive")
+    # Convert to DataFrame (reusing export_data)
+    df_trends = pd.DataFrame(export_data)
+    df_trends["Date"] = pd.to_datetime(df_trends["Date"])
 
-    for post in sorted(all_posts, key=lambda x: x["date"], reverse=True):
+    # Group by week
+    weekly_counts = df_trends.groupby(pd.Grouper(key="Date", freq="W")).size()
+    monthly_counts = df_trends.groupby(pd.Grouper(key="Date", freq="M")).size()
+
+    chart_type = st.radio("View Trends by:", ["Weekly", "Monthly"], horizontal=True)
+
+    if chart_type == "Weekly":
+        st.line_chart(weekly_counts, use_container_width=True)
+    else:
+        st.line_chart(monthly_counts, use_container_width=True)
+
+    # ─────────────────────────────────────
+    # 🔹 Summary Metrics
+    # ─────────────────────────────────────
+    with st.container():
+        st.subheader("📈 Overview")
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("📝 Total Blogs", len(all_posts))
+
+        try:
+            avg_time = sum(
+                int(post["reading_time"].split()[0])
+                for post in all_posts if "reading_time" in post
+            ) / len(all_posts)
+            col2.metric("⏱ Avg Reading Time", f"{round(avg_time)} min")
+        except:
+            col2.metric("⏱ Avg Reading Time", "N/A")
+
+        all_tags = [
+            tag for post in all_posts if "seo_tags" in post for tag in post["seo_tags"]
+        ]
+        col3.metric("🏷️ Unique Tags", len(set(all_tags)))
+
+
+    st.subheader("📆 Blog Posting Heatmap")
+
+    # Extract blog post dates
+    date_series = [post["date"].date() for post in all_posts]
+    df_dates = pd.Series(1, index=pd.to_datetime(date_series))
+    df_grouped = df_dates.groupby(df_dates.index).count()
+
+    # ✅ Unpack (fig, ax) from calplot
+    fig, _ = calplot.calplot(df_grouped, cmap="YlGnBu", colorbar=True, suptitle="Blog Posts per Day")
+    st.pyplot(fig)
+
+
+    # ─────────────────────────────────────
+    # 🔹 SEO Tag Frequency Bar Chart
+    # ─────────────────────────────────────
+    if all_tags:
+        st.subheader("🏷️ Most Common SEO Tags")
+        tag_counts = Counter(all_tags).most_common(10)
+        tags, counts = zip(*tag_counts)
+
+        fig, ax = plt.subplots()
+        ax.barh(tags, counts, color="#4B8BBE")
+        ax.set_xlabel("Count")
+        ax.set_title("Top SEO Tags")
+        st.pyplot(fig)
+
+    # ─────────────────────────────────────
+    # 🔹 Filtered Blog Archive
+    # ─────────────────────────────────────
+    st.subheader("📚 Blog Archive & Filters")
+
+    available_tags = sorted(set(all_tags))
+    selected_tags = st.multiselect("🔎 Filter by Tag", available_tags)
+
+    all_posts_sorted = sorted(all_posts, key=lambda x: x["date"], reverse=True)
+    if selected_tags:
+        filtered_posts = [
+            post for post in all_posts_sorted
+            if any(tag in post.get("seo_tags", []) for tag in selected_tags)
+        ]
+    else:
+        filtered_posts = all_posts_sorted
+
+    st.markdown(f"### 🗂️ Showing {len(filtered_posts)} blog(s)")
+
+    for post in filtered_posts:
         with st.expander(post["slug"].replace("-", " ").title()):
-            st.markdown(f"**Date:** {post['date'].strftime('%Y-%m-%d %H:%M')}")
-            st.markdown(f"**Reading Time:** {post.get('reading_time', 'N/A')}")
-            st.markdown(f"**Tags:** {', '.join(post.get('seo_tags', []))}")
-            st.markdown(f"**Summary:**\n\n{post.get('summary_bullets', 'N/A')}")
-            if "slug" in post:
-                st.markdown(f"[🔗 Read Blog](https://kaveeshagim.github.io/ai-content-creator-agent/{post['slug']}.html)")
+            st.markdown(f"📅 **Date:** {post['date'].strftime('%Y-%m-%d %H:%M')}")
+            st.markdown(f"⏱ **Reading Time:** {post.get('reading_time', 'N/A')}")
+            st.markdown(f"🏷️ **Tags:** {', '.join(post.get('seo_tags', []))}")
+            st.markdown(f"🧠 **Summary:**\n\n{post.get('summary_bullets', 'N/A')}")
+            st.markdown(
+                f"[🔗 View Blog](https://kaveeshagim.github.io/ai-content-creator-agent/{post['slug']}.html)"
+            )
