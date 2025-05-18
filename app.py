@@ -333,10 +333,22 @@ elif page == "📊 MCP Analytics Dashboard":
     # ─────────────────────────────────────
     st.subheader("📚 Blog Archive & Filters")
 
-    available_tags = sorted(set(all_tags))
-    selected_tags = st.multiselect("🔎 Filter by Tag", available_tags)
+    # ─────────────────────────────────────
+    # 🔍 Keyword Search Filter
+    # ─────────────────────────────────────
+    search_query = st.text_input("🔍 Search by keyword in title or summary")
 
+
+    # ─────────────────────────────────────
+    # 🔎 Filter by SEO Tags
+    # ─────────────────────────────────────
+    available_tags = sorted(set(all_tags))
+    selected_tags = st.multiselect("🏷️ Filter by Tag", available_tags)
+
+    # Sort all posts by date
     all_posts_sorted = sorted(all_posts, key=lambda x: x["date"], reverse=True)
+
+    # First filter by tags
     if selected_tags:
         filtered_posts = [
             post for post in all_posts_sorted
@@ -344,6 +356,14 @@ elif page == "📊 MCP Analytics Dashboard":
         ]
     else:
         filtered_posts = all_posts_sorted
+
+    # Then apply keyword search on the already tag-filtered posts
+    if search_query:
+        filtered_posts = [
+            post for post in filtered_posts
+            if search_query.lower() in post["slug"].lower()
+            or search_query.lower() in post.get("summary_bullets", "").lower()
+        ]
 
     st.markdown(f"### 🗂️ Showing {len(filtered_posts)} blog(s)")
 
