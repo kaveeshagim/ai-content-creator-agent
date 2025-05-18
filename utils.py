@@ -3,6 +3,8 @@ import datetime
 import markdown
 import json
 import subprocess
+import pandas as pd
+from datetime import datetime
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
 from langchain_core.prompts import ChatPromptTemplate
@@ -308,3 +310,20 @@ def auto_git_push():
         print("✅ Git push complete.")
     except subprocess.CalledProcessError as e:
         print("❌ Git error:", e)
+
+def load_blog_calendar_data():
+    records = []
+    meta_dir = "metadata"
+
+    for filename in os.listdir(meta_dir):
+        if filename.endswith(".json"):
+            filepath = os.path.join(meta_dir, filename)
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                slug = filename.replace(".json", "")
+                date = os.path.getmtime(filepath)  # File modified time
+                date_str = datetime.fromtimestamp(date).strftime("%Y-%m-%d")
+                title = slug.replace("-", " ").title()
+                records.append({"date": date_str, "title": title, "slug": slug})
+    
+    return pd.DataFrame(records)

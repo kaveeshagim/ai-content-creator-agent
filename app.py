@@ -1,151 +1,261 @@
 import os
 import streamlit as st
 import json
+from datetime import datetime
 from dotenv import load_dotenv
 from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
-from utils import rewrite_topic, generate_trending_topics
+from utils import rewrite_topic, generate_trending_topics,load_blog_calendar_data
 from agents import writer_agent, seo_agent, social_agent, editor_agent, outliner_agent, proofreader_agent, citation_inserter_agent
 load_dotenv()
+
+if "blog_queue" not in st.session_state:
+    st.session_state.blog_queue = []
 
 st.set_page_config(page_title="AI Content Creator", layout="wide")
 st.title("🧠 AI Content Creator Agent")
 
-topic = st.text_input("Enter a blog topic", st.session_state.get("topic", ""))
-tone = st.selectbox(
-    "Select tone/style",
-    ["professional", "casual", "witty", "inspirational", "conversational"],
-    index=0
-)
-audience = st.selectbox(
-    "Select target audience",
-    ["general audience", "beginners", "developers", "business professionals", "CTOs", "students"],
-    index=0
-)
+st.sidebar.title("🧭 Navigation")
+page = st.sidebar.radio("Go to", ["✍️ Blog Generator", "📅 Calendar View", "📊 MCP Analytics Dashboard"])
 
-if topic:
-    if st.checkbox("🧠 Show AI-generated outline before writing"):
-        from agents import outliner_agent
+if page == "✍️ Blog Generator":
+    topic = st.text_input("Enter a blog topic", st.session_state.get("topic", ""))
 
-        with st.spinner("Thinking through the structure..."):
-            generated_outline = outliner_agent(topic, audience)
-            outline_input = st.text_area("📋 Edit Outline", value=generated_outline, height=300)
+    if st.button("➕ Add to Queue"):
+        if topic:
+            st.session_state.blog_queue.append(topic)
+            st.success(f"✅ '{topic}' added to queue!")
+        else:
+            st.warning("Please enter a topic first.")
+
+    if st.session_state.blog_queue:
+        st.markdown("### ⏳ Topics in Queue")
+        for i, q_topic in enumerate(st.session_state.blog_queue):
+            st.markdown(f"{i+1}. {q_topic}")
+    else:
+        st.info("Queue is empty.")
+
+    tone = st.selectbox(
+        "Select tone/style",
+        ["professional", "casual", "witty", "inspirational", "conversational"],
+        index=0
+    )
+    audience = st.selectbox(
+        "Select target audience",
+        ["general audience", "beginners", "developers", "business professionals", "CTOs", "students"],
+        index=0
+    )
+
+    if st.session_state.blog_queue:
+        with st.form("queue_controls"):
+            next_col, full_col = st.columns(2)
+            with next_col:
+                next_clicked = st.form_submit_button("🚀 Generate Next Topic")
+            with full_col:
+                full_clicked = st.form_submit_button("🚂 Run Full Queue")
+
+        if next_clicked:
+            topic = st.session_state.blog_queue.pop(0)
+            st.session_state["topic"] = topic
+            st.rerun()
+
+        if full_clicked:
+            st.markdown("### ⚙️ Running full queue...")
+            while st.session_state.blog_queue:
+                queued_topic = st.session_state.blog_queue.pop(0)
+                outline_input = None
+                raw_blog = writer_agent(queued_topic, tone, audience, outline_input)
+                blog = proofreader_agent(raw_blog)
+                captions = generate_captions(queued_topic)
+                citations = citation_inserter_agent(blog)
+                save_outputs(queued_topic, blog, captions, citations)
+                st.success(f"✅ Generated blog for: {queued_topic}")
+
+            st.session_state.blog_queue.clear()
+            st.success("🎉 All queued topics have been processed!")
 
 
-with st.expander("📈 Need ideas? Generate trending topics"):
-    category = st.selectbox("Choose category", ["tech", "ai", "devops", "startups", "webdev"])
-    
-    if st.button("Suggest Topics"):
-        with st.spinner("Thinking of hot blog ideas..."):
-            topic_list = generate_trending_topics(category=category)
-            st.session_state.suggested_topics = topic_list.split("\n")
+    if topic:
+        if st.checkbox("🧠 Show AI-generated outline before writing"):
+            from agents import outliner_agent
 
-    if "suggested_topics" in st.session_state:
-        for i, suggestion in enumerate(st.session_state.suggested_topics):
-            cleaned = suggestion.lstrip("1234567890. ").strip()
-            if st.button(f"Use: {cleaned}", key=f"suggest-{i}"):
-                st.session_state["topic"] = cleaned
-                try:
-                    st.rerun()
-                except AttributeError:
-                    st.experimental_rerun()
+            with st.spinner("Thinking through the structure..."):
+                generated_outline = outliner_agent(topic, audience)
+                outline_input = st.text_area("📋 Edit Outline", value=generated_outline, height=300)
 
 
-# ✅ Slugify and check for duplicates only if topic is typed
-if topic:
-    slug = slugify(topic)
+    with st.expander("📈 Need ideas? Generate trending topics"):
+        category = st.selectbox("Choose category", ["tech", "ai", "devops", "startups", "webdev"])
+        
+        if st.button("Suggest Topics"):
+            with st.spinner("Thinking of hot blog ideas..."):
+                topic_list = generate_trending_topics(category=category)
+                st.session_state.suggested_topics = topic_list.split("\n")
 
-    # 🔁 Topic already exists? Show rewrite options
-    if topic_already_exists(slug):
-        st.warning(f"⚠️ Topic '{topic}' already exists.")
+        if "suggested_topics" in st.session_state:
+            for i, suggestion in enumerate(st.session_state.suggested_topics):
+                cleaned = suggestion.lstrip("1234567890. ").strip()
+                if st.button(f"Use: {cleaned}", key=f"suggest-{i}"):
+                    st.session_state["topic"] = cleaned
+                    try:
+                        st.rerun()
+                    except AttributeError:
+                        st.experimental_rerun()
 
-        if "rewritten_topic" not in st.session_state or st.session_state.get("last_topic") != topic:
-            st.session_state.rewritten_topic = rewrite_topic(topic)
-            st.session_state.last_topic = topic
 
-        st.info(f"🔁 Suggested: **{st.session_state.rewritten_topic}**")
+    # ✅ Slugify and check for duplicates only if topic is typed
+    if topic:
+        slug = slugify(topic)
 
-        action = st.radio("Choose an action:", ["Skip", "Use Suggested", "Overwrite"])
+        # 🔁 Topic already exists? Show rewrite options
+        if topic_already_exists(slug):
+            st.warning(f"⚠️ Topic '{topic}' already exists.")
 
-        if action == "Skip":
-            st.stop()
-        elif action == "Use Suggested":
-            topic = st.session_state.rewritten_topic
-            slug = slugify(topic)
-            st.success(f"✍️ Final Topic Selected: **{topic}**")
+            if "rewritten_topic" not in st.session_state or st.session_state.get("last_topic") != topic:
+                st.session_state.rewritten_topic = rewrite_topic(topic)
+                st.session_state.last_topic = topic
 
-        # Overwrite: do nothing, continue with original topic
+            st.info(f"🔁 Suggested: **{st.session_state.rewritten_topic}**")
 
-# ✅ Generate content button (unchanged)
-if topic and st.button("Generate Content"):
-    with st.spinner("Generating blog and captions..."):
+            action = st.radio("Choose an action:", ["Skip", "Use Suggested", "Overwrite"])
 
-        # blog = generate_blog(topic)
-        if "outline_input" not in locals():
-            outline_input = None
+            if action == "Skip":
+                st.stop()
+            elif action == "Use Suggested":
+                topic = st.session_state.rewritten_topic
+                slug = slugify(topic)
+                st.success(f"✍️ Final Topic Selected: **{topic}**")
 
-        raw_blog = writer_agent(topic, tone, audience, outline_input)
-        blog = proofreader_agent(raw_blog)
-        citations = citation_inserter_agent(blog)
-        captions = generate_captions(topic)
+            # Overwrite: do nothing, continue with original topic
 
-        save_outputs(topic, blog, captions,citations)
+    # ✅ Generate content button (unchanged)
+    if topic and st.button("Generate Content"):
+        with st.spinner("Generating blog and captions..."):
 
-    st.success("✅ Content generated!")
+            # blog = generate_blog(topic)
+            if "outline_input" not in locals():
+                outline_input = None
 
-    col1, col2 = st.columns(2)
+            raw_blog = writer_agent(topic, tone, audience, outline_input)
+            blog = proofreader_agent(raw_blog)
+            citations = citation_inserter_agent(blog)
+            captions = generate_captions(topic)
 
-    with col1:
-        st.subheader("✍️ Raw Draft (Writer Agent)")
-        st.markdown(raw_blog)
+            save_outputs(topic, blog, captions,citations)
 
-    with col2:
-        st.subheader("🧼 Polished Draft (Proofreader Agent)")
+        st.success("✅ Content generated!")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.subheader("✍️ Raw Draft (Writer Agent)")
+            st.markdown(raw_blog)
+
+        with col2:
+            st.subheader("🧼 Polished Draft (Proofreader Agent)")
+            st.markdown(blog)
+
+        st.subheader("📝 Blog Post")
         st.markdown(blog)
 
-    st.subheader("📝 Blog Post")
-    st.markdown(blog)
+        # Load metadata and display details
+        meta_path = f"metadata/{slugify(topic)}.json"
+        if os.path.exists(meta_path):
+            with open(meta_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
-    # Show reading time if available
-    meta_path = f"metadata/{slugify(topic)}.json"
-    if os.path.exists(meta_path):
-        with open(meta_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
 
-            # if "reading_time" in data:
-            #     st.caption(f"⏱ {data['reading_time']}")
+            if "reading_time" in data:
+                st.caption(f"⏱ {data['reading_time']}")
 
-    # st.subheader("📣 Social Media Captions")
-    # st.text(captions)
+            if "citations" in data:
+                st.subheader("🔗 Suggested Citations")
+                st.markdown(data["citations"])
+                    
+            if "summary_bullets" in data:
+                st.subheader("📌 Blog Summary")
+                st.markdown(data["summary_bullets"])
 
-        if "reading_time" in data:
-            st.caption(f"⏱ {data['reading_time']}")
+            st.subheader("📣 Social Media Captions")
+            st.text(captions)
 
-        if "citations" in data:
-            st.subheader("🔗 Suggested Citations")
-            st.markdown(data["citations"])
-                
-        if "summary_bullets" in data:
-            st.subheader("📌 Blog Summary")
-            st.markdown(data["summary_bullets"])
+            if "tweet_thread" in data:
+                st.subheader("🐦 Tweet Thread")
+                st.text(data["tweet_thread"])
+                st.download_button("📥 Download Tweet Thread (.txt)", data["tweet_thread"], file_name=f"{slugify(topic)}_thread.txt")
 
-        st.subheader("📣 Social Media Captions")
-        st.text(captions)
+            if "linkedin_post" in data:
+                st.subheader("📰 LinkedIn Post")
+                st.text_area("Preview", data["linkedin_post"], height=200)
+                st.download_button("📥 Download LinkedIn Post (.txt)", data["linkedin_post"], file_name=f"{slugify(topic)}_linkedin.txt")
 
-        if "tweet_thread" in data:
-            st.subheader("🐦 Tweet Thread")
-            st.text(data["tweet_thread"])
-            st.download_button("📥 Download Tweet Thread (.txt)", data["tweet_thread"], file_name=f"{slugify(topic)}_thread.txt")
+            if "share_banner" in data and os.path.exists(data["share_banner"]):
+                st.subheader("🖼️ Social Share Banner")
+                st.image(data["share_banner"])
+                with open(data["share_banner"], "rb") as f:
+                    st.download_button("📥 Download Banner (.png)", f, file_name=f"{slugify(topic)}.png")
 
-        if "linkedin_post" in data:
-            st.subheader("📰 LinkedIn Post")
-            st.text_area("Preview", data["linkedin_post"], height=200)
-            st.download_button("📥 Download LinkedIn Post (.txt)", data["linkedin_post"], file_name=f"{slugify(topic)}_linkedin.txt")
+        st.download_button("📥 Download Blog (.md)", blog, file_name=f"{topic}.md")
+        st.download_button("📥 Download Captions (.txt)", captions, file_name=f"{topic}_captions.txt")
 
-        if "share_banner" in data and os.path.exists(data["share_banner"]):
-            st.subheader("🖼️ Social Share Banner")
-            st.image(data["share_banner"])
-            with open(data["share_banner"], "rb") as f:
-                st.download_button("📥 Download Banner (.png)", f, file_name=f"{slugify(topic)}.png")
+elif page == "📅 Calendar View":
+    st.header("📅 Blog Calendar")
 
-    st.download_button("📥 Download Blog (.md)", blog, file_name=f"{topic}.md")
-    st.download_button("📥 Download Captions (.txt)", captions, file_name=f"{topic}_captions.txt")
+    from utils import load_blog_calendar_data
+    df = load_blog_calendar_data()
+
+    if not df.empty:
+        df = df.sort_values("date", ascending=False)
+        st.dataframe(df[["date", "title"]], use_container_width=True)
+
+        st.markdown("### 🔗 Blog Links")
+        for _, row in df.iterrows():
+            link = f"[{row['title']}]({f'https://kaveeshagim.github.io/ai-content-creator-agent/{row['slug']}.html'})"
+            st.markdown(f"📌 {row['date']}: {link}")
+    else:
+        st.info("No blogs generated yet.")
+
+elif page == "📊 MCP Analytics Dashboard":
+    st.header("📊 AI Content Creator Analytics")
+
+    # Load all metadata files
+    metadata_dir = "metadata"
+    all_posts = []
+
+    for filename in os.listdir(metadata_dir):
+        if filename.endswith(".json"):
+            path = os.path.join(metadata_dir, filename)
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                slug = filename.replace(".json", "")
+                data["slug"] = slug
+                data["date"] = datetime.fromtimestamp(os.path.getmtime(path))
+                all_posts.append(data)
+
+    st.success(f"✅ Loaded {len(all_posts)} posts")
+
+    col1, col2, col3 = st.columns(3)
+
+    # Total posts
+    col1.metric("Total Posts", len(all_posts))
+
+    # Average reading time
+    try:
+        avg_time = sum(int(post["reading_time"].split()[0]) for post in all_posts if "reading_time" in post) / len(all_posts)
+        col2.metric("Avg Reading Time", f"{round(avg_time)} min")
+    except:
+        col2.metric("Avg Reading Time", "N/A")
+
+    # Total unique tags
+    all_tags = [tag for post in all_posts if "seo_tags" in post for tag in post["seo_tags"]]
+    col3.metric("Unique Tags Used", len(set(all_tags)))
+
+    st.markdown("## 📝 Blog Archive")
+
+    for post in sorted(all_posts, key=lambda x: x["date"], reverse=True):
+        with st.expander(post["slug"].replace("-", " ").title()):
+            st.markdown(f"**Date:** {post['date'].strftime('%Y-%m-%d %H:%M')}")
+            st.markdown(f"**Reading Time:** {post.get('reading_time', 'N/A')}")
+            st.markdown(f"**Tags:** {', '.join(post.get('seo_tags', []))}")
+            st.markdown(f"**Summary:**\n\n{post.get('summary_bullets', 'N/A')}")
+            if "slug" in post:
+                st.markdown(f"[🔗 Read Blog](https://kaveeshagim.github.io/ai-content-creator-agent/{post['slug']}.html)")
