@@ -1,0 +1,11 @@
+streamlit
+langchain
+langchain-core
+langchain-community
+openai
+python-dotenv
+markdown
+matplotlib
+calplot
+pillow
+pandas

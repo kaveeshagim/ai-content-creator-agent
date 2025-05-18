@@ -3,41 +3,103 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-%23FAAC58?logo=chainlink&logoColor=black)
 ![OpenAI GPT-4o](https://img.shields.io/badge/OpenAI-GPT--4o-blueviolet?logo=openai)
-[![GitHub Pages](https://img.shields.io/badge/Hosted%20on-GitHub%20Pages-222?logo=github)](https://ccxxcc.github.io/ai-content-creator-agent/)
+[![GitHub Pages](https://img.shields.io/badge/Hosted%20on-GitHub%20Pages-222?logo=github)](https://kaveeshagim.github.io/ai-content-creator-agent/)
 ![RSS Feed](https://img.shields.io/badge/Auto--Publishing-Dev.to-orange?logo=devdotto)
 ![Medium](https://img.shields.io/badge/Supports-Medium%20Import-green?logo=medium)
-![Last Updated](https://img.shields.io/github/last-commit/ccxxcc/ai-content-creator-agent)
-![License](https://img.shields.io/github/license/ccxxcc/ai-content-creator-agent)
+![Last Updated](https://img.shields.io/github/last-commit/kaveeshagim/ai-content-creator-agent)
+![License](https://img.shields.io/github/license/kaveeshagim/ai-content-creator-agent)
 
-This is an intelligent content generation agent built with Python, LangChain, and OpenAI GPT-4o. It allows you to:
+> An intelligent, agent-powered blog generator built with Python, LangChain, and OpenAI GPT-4o. Fully automated — from idea to published blog with zero manual effort.
 
-- 🔍 Input any topic
-- ✍️ Automatically generate a full blog post
-- 📣 Create social media captions for Twitter, LinkedIn, and Instagram
-- 💾 Save everything locally as `.md`, `.txt`, and `.html` files
-- 🌐 Host content using GitHub Pages and generate a live RSS feed
-- 📰 Auto-publish blog posts to Dev.to via RSS
-- 🧠 Powered by GPT-4o for high-quality results
+---
 
-### 🚀 Features
+### ✨ Key Features
 
-- Uses LangChain + OpenAI for AI-generated blog content
-- Clean prompt templates for consistent tone and structure
-- RSS feed (`rss.xml`) includes full blog HTML content for Dev.to
-- Streamlit UI to easily input topics and generate results
-- Medium-friendly: import blog URLs manually
-- Dev.to-friendly: automatic detection and publishing via RSS
+- 🔍 Input any blog topic
+- 🧠 Outliner Agent to structure posts before writing
+- ✍️ Writer Agent + Proofreader Agent for high-quality content
+- 📣 Auto-generated captions for Twitter, LinkedIn, Instagram
+- 🔗 Citation Inserter Agent for credibility and references
+- 🎯 SEO Agent for tags, meta descriptions, and summaries
+- 🖼️ Share Banner Generator for social media branding
+- 💾 Saves content as `.md`, `.txt`, `.json`, and `.html`
+- 📤 Auto-push to GitHub Pages for hosting + RSS feed
+- 📰 Auto-publish to Dev.to via RSS
+- 🎛️ Streamlit UI with queue system, trending topics, outline editing
+- 📊 Built-in Analytics Dashboard (reading time, tags, calendar heatmap)
 
-### 📦 Output Structure
+---
 
-- `blogs/` — Markdown blog content
-- `captions/` — Social media caption sets
-- `docs/` — GitHub Pages folder with `.html` blogs and `rss.xml`
+### 🧩 Modular Agent Architecture
 
-### 🔮 Future Enhancements
+| Agent               | Role                                                      |
+| ------------------- | --------------------------------------------------------- |
+| `Outliner Agent`    | Creates blog structure before writing                     |
+| `Writer Agent`      | Generates content based on topic, tone, audience, outline |
+| `Proofreader Agent` | Cleans and refines blog content                           |
+| `Citation Agent`    | Inserts credible references and links                     |
+| `SEO Agent`         | Suggests meta description and SEO tags                    |
+| `Social Agent`      | Generates captions and post templates for each platform   |
+| `Editor Agent`      | Summarizes content in bullet points                       |
 
-- 🧰 Agent memory to track topics and avoid duplication
-- 🧠 AI-powered SEO and meta description suggestions
-- 📬 Newsletter generation + Substack/Buttondown integration
-- 🧵 Auto-thread generator for Twitter posts
-- 🎨 Themed HTML styling and Dark Mode export
+---
+
+### 🖥️ Streamlit UI Features
+
+- ✅ Topic input, tone & audience selector
+- 📋 Optional outline preview and editing
+- ➕ Queue multiple topics for batch processing
+- 🚀 One-click generation with live feedback
+- 📦 Downloadable files and preview windows
+- 📆 Analytics Dashboard with:
+  - Calendar heatmap
+  - Weekly/monthly trends
+  - Top tags
+  - Filterable blog archive
+  - CSV export
+
+---
+
+### 📂 Project Structure
+
+- 📁 `blogs/` → Markdown blog posts
+- 📁 `captions/` → Captions for each blog
+- 📁 `metadata/` → Blog metadata (JSON: SEO, summary, links, etc.)
+- 📁 `docs/` → GitHub Pages folder (.html files + rss.xml)
+- 📁 `banners/` → Social share images
+- 📄 `rss.xml` → Auto-updated RSS feed for Dev.to and Medium
+
+---
+
+### 🔮 Possible Enhancements
+
+- 🧵 Thread Composer Agent (Twitter carousel style)
+- 📱 Mobile version using Streamlit Cloud / Flutter
+- 🧠 Personalization agent for tone & voice calibration
+- 🤖 Slack + Zapier integration for daily blog triggers
+- 📨 Newsletter bot for Substack / Revue
+
+---
+
+### 📡 Live Demo
+
+- 🌍 [GitHub Pages Blog Feed](https://kaveeshagim.github.io/ai-content-creator-agent/)
+- 📰 [Auto-published to Dev.to](https://dev.to/kaveesha_c74582728492e034)
+
+---
+
+### 🛠️ Tech Stack
+
+- Python 3.11
+- LangChain
+- OpenAI GPT-4o
+- Streamlit
+- Matplotlib + Calplot
+- GitHub Pages + RSS
+
+---
+
+Want to build your own AI-powered publishing assistant?  
+**Fork this repo and start generating!**
+
+---
