@@ -2,6 +2,8 @@ import os
 import re
 import markdown
 import json
+from google_calendar import create_blog_event
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -86,6 +88,12 @@ def save_outputs(topic, blog, captions,citations):
 
     print(f"✅ Metadata saved to metadata/{slug}.json")
     auto_git_push()
+
+    # ✅ Schedule on Google Calendar (e.g. for next day at 9 AM)
+    # scheduled_time = datetime.now().replace(hour=9, minute=0, second=0) + timedelta(days=1)
+    # create_blog_event(topic, scheduled_time)
+
+    print(f"📅 Google Calendar event scheduled for: {scheduled_time}")
 
 # function to generate blog content
 def generate_blog(topic):

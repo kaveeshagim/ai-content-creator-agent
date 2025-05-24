@@ -27,3 +27,6 @@ build/
 # Output folders
 blogs/
 captions/
+
+# credentials
+*.json

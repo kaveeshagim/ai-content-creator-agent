@@ -3,7 +3,8 @@ import streamlit as st
 import json
 import pandas as pd
 import calplot
-from datetime import datetime
+from datetime import datetime, timedelta
+from google_calendar import create_blog_event
 from dotenv import load_dotenv
 from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
 from utils import rewrite_topic, generate_trending_topics,load_blog_calendar_data
@@ -70,6 +71,12 @@ if page == "✍️ Blog Generator":
                 captions = generate_captions(queued_topic)
                 citations = citation_inserter_agent(blog)
                 save_outputs(queued_topic, blog, captions, citations)
+
+                # ✅ Schedule on Google Calendar
+                # scheduled_time = datetime.now().replace(hour=9, minute=0, second=0) + timedelta(days=1)
+                # create_blog_event(queued_topic, scheduled_time)
+                # st.info(f"📅 Scheduled '{queued_topic}' for {scheduled_time.strftime('%Y-%m-%d %I:%M %p')}")
+
                 st.success(f"✅ Generated blog for: {queued_topic}")
 
             st.session_state.blog_queue.clear()
