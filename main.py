@@ -93,7 +93,7 @@ def save_outputs(topic, blog, captions,citations):
     # scheduled_time = datetime.now().replace(hour=9, minute=0, second=0) + timedelta(days=1)
     # create_blog_event(topic, scheduled_time)
 
-    print(f"📅 Google Calendar event scheduled for: {scheduled_time}")
+    # print(f"📅 Google Calendar event scheduled for: {scheduled_time}")
 
 # function to generate blog content
 def generate_blog(topic):
