@@ -99,7 +99,14 @@
 
 ---
 
-Want to build your own AI-powered publishing assistant?  
+### ⚙️ Setup
+
+1. Copy `.env.example` to `.env` and fill in your API keys.
+2. Install the dependencies with `pip install -r requirements.txt`.
+
+---
+
+Want to build your own AI-powered publishing assistant?
 **Fork this repo and start generating!**
 
 ---
