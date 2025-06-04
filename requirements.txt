@@ -12,3 +12,9 @@ pandas
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
+fastapi==0.115.12
+uvicorn==0.34.3
+requests==2.32.3
+yagmail==0.15.293
+schedule==1.2.2
+pydantic==2.11.5
