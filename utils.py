@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import datetime
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
+import logging
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from PIL import Image, ImageDraw, ImageFont
@@ -16,6 +17,8 @@ import requests
 import base64
 
 TOPIC_MEMORY_FILE = "memory/topics.json"
+
+logger = logging.getLogger(__name__)
 
 def convert_markdown_to_html(markdown_text, title, slug):
     html_content = markdown.markdown(markdown_text)
@@ -212,8 +215,12 @@ def generate_trending_topics(n=5, category="tech"):
     ])
 
     llm = ChatOpenAI()
-    response = llm.invoke(prompt.format_messages())
-    return response.content.strip()
+    try:
+        response = llm.invoke(prompt.format_messages())
+        return response.content.strip()
+    except Exception as e:
+        logger.error("Failed to generate trending topics: %s", e)
+        return ""
 
 def summarize_blog(blog):
     prompt = ChatPromptTemplate.from_messages([
@@ -336,9 +343,19 @@ def create_dalle_banner(title, slug):
     return path
 
 def auto_git_push():
+    """Push generated docs to Git if enabled via environment variable."""
+    if os.getenv("ENABLE_GIT_PUSH", "false").lower() != "true":
+        print("ℹ️ Git push skipped (ENABLE_GIT_PUSH not set).")
+        return
+
     try:
         subprocess.run(["git", "add", "docs"], check=True)
-        subprocess.run(["git", "commit", "-m", "🤖 Auto update: new blog and RSS"], check=True)
+        subprocess.run([
+            "git",
+            "commit",
+            "-m",
+            "🤖 Auto update: new blog and RSS",
+        ], check=True)
         subprocess.run(["git", "push"], check=True)
         print("✅ Git push complete.")
     except subprocess.CalledProcessError as e:

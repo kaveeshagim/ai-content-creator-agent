@@ -18,3 +18,5 @@ requests==2.32.3
 yagmail==0.15.293
 schedule==1.2.2
 pydantic==2.11.5
+pytest
+httpx

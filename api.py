@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+import asyncio
 from pydantic import BaseModel
 from agents import writer_agent, proofreader_agent, seo_agent, editor_agent, citation_inserter_agent, social_agent
 from utils import estimate_reading_time, generate_tweet_thread, generate_linkedin_post, rewrite_topic, generate_trending_topics, load_blog_calendar_data
@@ -30,13 +31,13 @@ class SaveRequest(BaseModel):
     citations: str
 
 @app.post("/generate")
-def generate_blog_content(req: BlogRequest):
+async def generate_blog_content(req: BlogRequest):
     try:
-        raw_blog = writer_agent(req.topic, req.tone, req.audience, req.outline)
-        blog = proofreader_agent(raw_blog)
-        summary = editor_agent(blog)
-        citations = citation_inserter_agent(blog)
-        seo_data = seo_agent(blog)
+        raw_blog = await asyncio.to_thread(writer_agent, req.topic, req.tone, req.audience, req.outline)
+        blog = await asyncio.to_thread(proofreader_agent, raw_blog)
+        summary = await asyncio.to_thread(editor_agent, blog)
+        citations = await asyncio.to_thread(citation_inserter_agent, blog)
+        seo_data = await asyncio.to_thread(seo_agent, blog)
 
         try:
             seo_parsed = json.loads(seo_data)
@@ -62,36 +63,36 @@ def generate_blog_content(req: BlogRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/suggest-topics")
-def suggest_topics(category: str = Query(..., example="tech")):
+async def suggest_topics(category: str = Query(..., example="tech")):
     try:
-        topics = generate_trending_topics(category)
+        topics = await asyncio.to_thread(generate_trending_topics, category)
         return {"topics": topics.split("\n")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/check-topic")
-def check_topic(slug: str, topic: str):
-    exists = topic_already_exists(slug)
-    suggestion = rewrite_topic(topic)
+async def check_topic(slug: str, topic: str):
+    exists = await asyncio.to_thread(topic_already_exists, slug)
+    suggestion = await asyncio.to_thread(rewrite_topic, topic)
     return {"exists": exists, "rewritten": suggestion}
 
 
 
 @app.post("/save")
-def save_blog(req: SaveRequest):
+async def save_blog(req: SaveRequest):
     try:
-        save_outputs(req.topic, req.blog, req.captions, req.citations)
+        await asyncio.to_thread(save_outputs, req.topic, req.blog, req.captions, req.citations)
         return JSONResponse(content={"message": "Saved successfully"}, status_code=201)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/calendar")
-def calendar_data():
-    df = load_blog_calendar_data()
+async def calendar_data():
+    df = await asyncio.to_thread(load_blog_calendar_data)
     return df.to_dict(orient="records")
 
 @app.get("/analytics")
-def dashboard_data():
+async def dashboard_data():
     from datetime import datetime
     import os
     from collections import Counter
