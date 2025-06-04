@@ -1,5 +1,6 @@
 import os
 import datetime
+import re
 import markdown
 import json
 import subprocess
@@ -19,6 +20,12 @@ import base64
 TOPIC_MEMORY_FILE = "memory/topics.json"
 
 logger = logging.getLogger(__name__)
+
+
+def slugify(text: str) -> str:
+    """Convert a string into a slug usable for filenames and URLs."""
+    return re.sub(r"[\W_]+", "-", text.lower()).strip("-")
+
 
 def convert_markdown_to_html(markdown_text, title, slug):
     html_content = markdown.markdown(markdown_text)
@@ -108,12 +115,12 @@ def generate_rss_feed(
     blog_dir="blogs",
     html_dir="docs",
     output="docs/rss.xml",
-    site_url="https://kaveeshagim.github.io/ai-content-creator-agent"
+    site_url="https://kaveeshagim.github.io/ai-content-creator-agent",
 ):
-    rss = Element("rss", {
-        "version": "2.0",
-        "xmlns:content": "http://purl.org/rss/1.0/modules/content/"
-    })
+    rss = Element(
+        "rss",
+        {"version": "2.0", "xmlns:content": "http://purl.org/rss/1.0/modules/content/"},
+    )
 
     channel = SubElement(rss, "channel")
 
@@ -127,7 +134,9 @@ def generate_rss_feed(
             slug = filename[:-3]
             filepath = os.path.join(blog_dir, filename)
             html_link = f"{site_url}/{slug}.html"
-            mod_time = datetime.datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%a, %d %b %Y %H:%M:%S +0530")
+            mod_time = datetime.datetime.fromtimestamp(
+                os.path.getmtime(filepath)
+            ).strftime("%a, %d %b %Y %H:%M:%S +0530")
 
             with open(filepath, "r", encoding="utf-8") as f:
                 md_content = f.read()
@@ -151,13 +160,14 @@ def generate_rss_feed(
             SubElement(item, "link").text = html_link
             SubElement(item, "pubDate").text = mod_time
             SubElement(item, "guid").text = html_link
-            description = metadata.get("meta_description", f"Read full article at {html_link}")
+            description = metadata.get(
+                "meta_description", f"Read full article at {html_link}"
+            )
             SubElement(item, "description").text = description
             SubElement(item, "content:encoded").text = f"<![CDATA[{html_content}]]>"
             tags = metadata.get("seo_tags", [])
             for tag in tags:
                 SubElement(item, "category").text = tag
-
 
     pretty_xml = parseString(tostring(rss)).toprettyxml(indent="  ")
     with open(output, "w", encoding="utf-8") as f:
@@ -165,19 +175,23 @@ def generate_rss_feed(
 
     print(f"✅ RSS feed with content saved as {output}")
 
+
 def load_topic_memory():
-    os.makedirs("memory", exist_ok=True) 
+    os.makedirs("memory", exist_ok=True)
     if not os.path.exists(TOPIC_MEMORY_FILE):
         return []
     with open(TOPIC_MEMORY_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def save_topic_memory(topics):
     with open(TOPIC_MEMORY_FILE, "w", encoding="utf-8") as f:
         json.dump(topics, f, indent=2)
 
+
 def topic_already_exists(slug):
     return slug in load_topic_memory()
+
 
 def add_topic_to_memory(slug):
     topics = load_topic_memory()
@@ -186,33 +200,58 @@ def add_topic_to_memory(slug):
 
 
 def generate_blog_metadata(blog):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an SEO assistant. Output JSON only."),
-        ("human", "For the following blog, generate:\n"
-                  "- 5 SEO tags (lowercase, no #)\n"
-                  "- A meta description (max 160 characters)\n\n"
-                  f"Blog:\n{blog}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an SEO assistant. Output JSON only."),
+            (
+                "human",
+                "For the following blog, generate:\n"
+                "- 5 SEO tags (lowercase, no #)\n"
+                "- A meta description (max 160 characters)\n\n"
+                f"Blog:\n{blog}",
+            ),
+        ]
+    )
 
-    llm = ChatOpenAI()  # Initialize the LLM (ensure your environment is configured with API keys)
+    llm = (
+        ChatOpenAI()
+    )  # Initialize the LLM (ensure your environment is configured with API keys)
     metadata = llm.invoke(prompt.format_messages())
     return metadata.content
 
+
 def rewrite_topic(original_topic):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful assistant who rewrites blog topics to avoid duplication."),
-        ("human", f"Rewrite the following blog topic to make it unique, catchy, and different:\n\n{original_topic}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a helpful assistant who rewrites blog topics to avoid duplication.",
+            ),
+            (
+                "human",
+                f"Rewrite the following blog topic to make it unique, catchy, and different:\n\n{original_topic}",
+            ),
+        ]
+    )
 
     llm = ChatOpenAI()
     response = llm.invoke(prompt.format_messages())
     return response.content.strip()
 
+
 def generate_trending_topics(n=5, category="tech"):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a creative blog strategist. Return a numbered list of blog topic ideas. Keep them timely, relevant, and niche-aligned."),
-        ("human", f"Suggest {n} unique, creative, and current blog topics in the '{category}' space.")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a creative blog strategist. Return a numbered list of blog topic ideas. Keep them timely, relevant, and niche-aligned.",
+            ),
+            (
+                "human",
+                f"Suggest {n} unique, creative, and current blog topics in the '{category}' space.",
+            ),
+        ]
+    )
 
     llm = ChatOpenAI()
     try:
@@ -222,49 +261,73 @@ def generate_trending_topics(n=5, category="tech"):
         logger.error("Failed to generate trending topics: %s", e)
         return ""
 
+
 def summarize_blog(blog):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an assistant that summarizes blog posts. Output a bullet list of 2–3 short, punchy key points."),
-        ("human", f"Summarize this blog post:\n\n{blog}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an assistant that summarizes blog posts. Output a bullet list of 2–3 short, punchy key points.",
+            ),
+            ("human", f"Summarize this blog post:\n\n{blog}"),
+        ]
+    )
 
     llm = ChatOpenAI()
     response = llm.invoke(prompt.format_messages())
     return response.content.strip()
+
 
 def estimate_reading_time(blog_text, wpm=200):
     word_count = len(blog_text.split())
     minutes = max(1, round(word_count / wpm))
     return f"{minutes} min read"
 
+
 def generate_tweet_thread(blog_text):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a social media strategist who converts blogs into engaging Twitter threads. Use short sentences, emojis, and hooks."),
-        ("human", f"Convert the following blog into a 5-7 tweet thread:\n\n{blog_text}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a social media strategist who converts blogs into engaging Twitter threads. Use short sentences, emojis, and hooks.",
+            ),
+            (
+                "human",
+                f"Convert the following blog into a 5-7 tweet thread:\n\n{blog_text}",
+            ),
+        ]
+    )
 
     llm = ChatOpenAI()
     response = llm.invoke(prompt.format_messages())
     return response.content.strip()
+
 
 def generate_linkedin_post(blog_text):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a social media assistant that writes professional LinkedIn posts based on blog content. Include a hook, a 2–3 line summary, emojis, and a soft call-to-action at the end."),
-        ("human", f"Write a LinkedIn post based on this blog:\n\n{blog_text}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a social media assistant that writes professional LinkedIn posts based on blog content. Include a hook, a 2–3 line summary, emojis, and a soft call-to-action at the end.",
+            ),
+            ("human", f"Write a LinkedIn post based on this blog:\n\n{blog_text}"),
+        ]
+    )
 
     llm = ChatOpenAI()
     response = llm.invoke(prompt.format_messages())
     return response.content.strip()
 
+
 from PIL import Image, ImageDraw, ImageFont
+
 
 def create_share_banner(title, slug):
     os.makedirs("banners", exist_ok=True)
 
     width, height = 1200, 630
     background_color = (15, 15, 20)  # deep tech gray
-    accent_color = (80, 160, 255)    # soft blue
+    accent_color = (80, 160, 255)  # soft blue
 
     img = Image.new("RGB", (width, height), color=background_color)
     draw = ImageDraw.Draw(img)
@@ -307,11 +370,14 @@ def create_share_banner(title, slug):
     # Footer
     footer = "⚙️ AI Content Creator"
     fw = draw.textlength(footer, font=footer_font)
-    draw.text(((width - fw) // 2, height - 60), footer, font=footer_font, fill=accent_color)
+    draw.text(
+        ((width - fw) // 2, height - 60), footer, font=footer_font, fill=accent_color
+    )
 
     path = f"banners/{slug}.png"
     img.save(path)
     return path
+
 
 def create_dalle_banner(title, slug):
     """Generate a banner image using OpenAI's DALL-E API."""
@@ -342,6 +408,7 @@ def create_dalle_banner(title, slug):
         f.write(base64.b64decode(image_data))
     return path
 
+
 def auto_git_push():
     """Push generated docs to Git if enabled via environment variable."""
     if os.getenv("ENABLE_GIT_PUSH", "false").lower() != "true":
@@ -350,30 +417,53 @@ def auto_git_push():
 
     try:
         subprocess.run(["git", "add", "docs"], check=True)
-        subprocess.run([
-            "git",
-            "commit",
-            "-m",
-            "🤖 Auto update: new blog and RSS",
-        ], check=True)
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                "🤖 Auto update: new blog and RSS",
+            ],
+            check=True,
+        )
         subprocess.run(["git", "push"], check=True)
         print("✅ Git push complete.")
     except subprocess.CalledProcessError as e:
         print("❌ Git error:", e)
 
-def load_blog_calendar_data():
-    records = []
-    meta_dir = "metadata"
 
-    for filename in os.listdir(meta_dir):
-        if filename.endswith(".json"):
-            filepath = os.path.join(meta_dir, filename)
-            with open(filepath, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                slug = filename.replace(".json", "")
-                date = os.path.getmtime(filepath)  # File modified time
-                date_str = datetime.fromtimestamp(date).strftime("%Y-%m-%d")
-                title = slug.replace("-", " ").title()
-                records.append({"date": date_str, "title": title, "slug": slug})
-    
+def load_blog_calendar_data():
+    """Load calendar data from Google Calendar or local metadata."""
+    records = []
+
+    if os.getenv("ENABLE_GOOGLE_CALENDAR", "false").lower() == "true":
+        try:
+            from google_calendar import list_blog_events
+
+            events = list_blog_events()
+            for event in events:
+                start = event.get("start", {}).get("dateTime") or event.get(
+                    "start", {}
+                ).get("date")
+                date_str = start.split("T")[0] if start else ""
+                title = event.get("summary", "")
+                records.append(
+                    {"date": date_str, "title": title, "slug": slugify(title)}
+                )
+        except Exception as e:
+            print(f"ℹ️ Google Calendar fetch failed: {e}")
+
+    if not records:
+        meta_dir = "metadata"
+        for filename in os.listdir(meta_dir):
+            if filename.endswith(".json"):
+                filepath = os.path.join(meta_dir, filename)
+                with open(filepath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    slug = filename.replace(".json", "")
+                    date = os.path.getmtime(filepath)  # File modified time
+                    date_str = datetime.fromtimestamp(date).strftime("%Y-%m-%d")
+                    title = slug.replace("-", " ").title()
+                    records.append({"date": date_str, "title": title, "slug": slug})
+
     return pd.DataFrame(records)

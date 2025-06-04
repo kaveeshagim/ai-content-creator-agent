@@ -6,9 +6,24 @@ import calplot
 from datetime import datetime, timedelta
 from google_calendar import create_blog_event
 from dotenv import load_dotenv
-from main import topic_already_exists, slugify, generate_blog, generate_captions, save_outputs
-from utils import rewrite_topic, generate_trending_topics,load_blog_calendar_data
-from agents import writer_agent, seo_agent, social_agent, editor_agent, outliner_agent, proofreader_agent, citation_inserter_agent
+from main import (
+    topic_already_exists,
+    slugify,
+    generate_blog,
+    generate_captions,
+    save_outputs,
+)
+from utils import rewrite_topic, generate_trending_topics, load_blog_calendar_data
+from agents import (
+    writer_agent,
+    seo_agent,
+    social_agent,
+    editor_agent,
+    outliner_agent,
+    proofreader_agent,
+    citation_inserter_agent,
+)
+
 load_dotenv()
 
 if "blog_queue" not in st.session_state:
@@ -18,7 +33,9 @@ st.set_page_config(page_title="AI Content Creator", layout="wide")
 st.title("🧠 AI Content Creator Agent")
 
 st.sidebar.title("🧭 Navigation")
-page = st.sidebar.radio("Go to", ["✍️ Blog Generator", "📅 Calendar View", "📊 MCP Analytics Dashboard"])
+page = st.sidebar.radio(
+    "Go to", ["✍️ Blog Generator", "📅 Calendar View", "📊 MCP Analytics Dashboard"]
+)
 
 if page == "✍️ Blog Generator":
     topic = st.text_input("Enter a blog topic", st.session_state.get("topic", ""))
@@ -40,12 +57,19 @@ if page == "✍️ Blog Generator":
     tone = st.selectbox(
         "Select tone/style",
         ["professional", "casual", "witty", "inspirational", "conversational"],
-        index=0
+        index=0,
     )
     audience = st.selectbox(
         "Select target audience",
-        ["general audience", "beginners", "developers", "business professionals", "CTOs", "students"],
-        index=0
+        [
+            "general audience",
+            "beginners",
+            "developers",
+            "business professionals",
+            "CTOs",
+            "students",
+        ],
+        index=0,
     )
 
     if st.session_state.blog_queue:
@@ -72,16 +96,16 @@ if page == "✍️ Blog Generator":
                 citations = citation_inserter_agent(blog)
                 save_outputs(queued_topic, blog, captions, citations)
 
-                # ✅ Schedule on Google Calendar
-                # scheduled_time = datetime.now().replace(hour=9, minute=0, second=0) + timedelta(days=1)
-                # create_blog_event(queued_topic, scheduled_time)
-                # st.info(f"📅 Scheduled '{queued_topic}' for {scheduled_time.strftime('%Y-%m-%d %I:%M %p')}")
+                if os.getenv("ENABLE_GOOGLE_CALENDAR", "false").lower() == "true":
+                    try:
+                        create_blog_event(queued_topic, datetime.now())
+                    except Exception as e:
+                        st.warning(f"Google Calendar event failed: {e}")
 
                 st.success(f"✅ Generated blog for: {queued_topic}")
 
             st.session_state.blog_queue.clear()
             st.success("🎉 All queued topics have been processed!")
-
 
     if topic:
         if st.checkbox("🧠 Show AI-generated outline before writing"):
@@ -89,12 +113,15 @@ if page == "✍️ Blog Generator":
 
             with st.spinner("Thinking through the structure..."):
                 generated_outline = outliner_agent(topic, audience)
-                outline_input = st.text_area("📋 Edit Outline", value=generated_outline, height=300)
-
+                outline_input = st.text_area(
+                    "📋 Edit Outline", value=generated_outline, height=300
+                )
 
     with st.expander("📈 Need ideas? Generate trending topics"):
-        category = st.selectbox("Choose category", ["tech", "ai", "devops", "startups", "webdev"])
-        
+        category = st.selectbox(
+            "Choose category", ["tech", "ai", "devops", "startups", "webdev"]
+        )
+
         if st.button("Suggest Topics"):
             with st.spinner("Thinking of hot blog ideas..."):
                 topic_list = generate_trending_topics(category=category)
@@ -110,7 +137,6 @@ if page == "✍️ Blog Generator":
                     except AttributeError:
                         st.experimental_rerun()
 
-
     # ✅ Slugify and check for duplicates only if topic is typed
     if topic:
         slug = slugify(topic)
@@ -119,13 +145,18 @@ if page == "✍️ Blog Generator":
         if topic_already_exists(slug):
             st.warning(f"⚠️ Topic '{topic}' already exists.")
 
-            if "rewritten_topic" not in st.session_state or st.session_state.get("last_topic") != topic:
+            if (
+                "rewritten_topic" not in st.session_state
+                or st.session_state.get("last_topic") != topic
+            ):
                 st.session_state.rewritten_topic = rewrite_topic(topic)
                 st.session_state.last_topic = topic
 
             st.info(f"🔁 Suggested: **{st.session_state.rewritten_topic}**")
 
-            action = st.radio("Choose an action:", ["Skip", "Use Suggested", "Overwrite"])
+            action = st.radio(
+                "Choose an action:", ["Skip", "Use Suggested", "Overwrite"]
+            )
 
             if action == "Skip":
                 st.stop()
@@ -149,7 +180,13 @@ if page == "✍️ Blog Generator":
             citations = citation_inserter_agent(blog)
             captions = generate_captions(topic)
 
-            save_outputs(topic, blog, captions,citations)
+            save_outputs(topic, blog, captions, citations)
+
+        if os.getenv("ENABLE_GOOGLE_CALENDAR", "false").lower() == "true":
+            try:
+                create_blog_event(topic, datetime.now())
+            except Exception as e:
+                st.warning(f"Google Calendar event failed: {e}")
 
         st.success("✅ Content generated!")
 
@@ -172,14 +209,13 @@ if page == "✍️ Blog Generator":
             with open(meta_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-
             if "reading_time" in data:
                 st.caption(f"⏱ {data['reading_time']}")
 
             if "citations" in data:
                 st.subheader("🔗 Suggested Citations")
                 st.markdown(data["citations"])
-                    
+
             if "summary_bullets" in data:
                 st.subheader("📌 Blog Summary")
                 st.markdown(data["summary_bullets"])
@@ -190,26 +226,41 @@ if page == "✍️ Blog Generator":
             if "tweet_thread" in data:
                 st.subheader("🐦 Tweet Thread")
                 st.text(data["tweet_thread"])
-                st.download_button("📥 Download Tweet Thread (.txt)", data["tweet_thread"], file_name=f"{slugify(topic)}_thread.txt")
+                st.download_button(
+                    "📥 Download Tweet Thread (.txt)",
+                    data["tweet_thread"],
+                    file_name=f"{slugify(topic)}_thread.txt",
+                )
 
             if "linkedin_post" in data:
                 st.subheader("📰 LinkedIn Post")
                 st.text_area("Preview", data["linkedin_post"], height=200)
-                st.download_button("📥 Download LinkedIn Post (.txt)", data["linkedin_post"], file_name=f"{slugify(topic)}_linkedin.txt")
+                st.download_button(
+                    "📥 Download LinkedIn Post (.txt)",
+                    data["linkedin_post"],
+                    file_name=f"{slugify(topic)}_linkedin.txt",
+                )
 
             if "share_banner" in data and os.path.exists(data["share_banner"]):
                 st.subheader("🖼️ Social Share Banner")
                 st.image(data["share_banner"])
                 with open(data["share_banner"], "rb") as f:
-                    st.download_button("📥 Download Banner (.png)", f, file_name=f"{slugify(topic)}.png")
+                    st.download_button(
+                        "📥 Download Banner (.png)",
+                        f,
+                        file_name=f"{slugify(topic)}.png",
+                    )
 
         st.download_button("📥 Download Blog (.md)", blog, file_name=f"{topic}.md")
-        st.download_button("📥 Download Captions (.txt)", captions, file_name=f"{topic}_captions.txt")
+        st.download_button(
+            "📥 Download Captions (.txt)", captions, file_name=f"{topic}_captions.txt"
+        )
 
 elif page == "📅 Calendar View":
     st.header("📅 Blog Calendar")
 
     from utils import load_blog_calendar_data
+
     df = load_blog_calendar_data()
 
     if not df.empty:
@@ -246,14 +297,16 @@ elif page == "📊 MCP Analytics Dashboard":
 
     export_data = []
     for post in all_posts:
-        export_data.append({
-            "Title": post.get("slug", "").replace("-", " ").title(),
-            "Date": post.get("date").strftime("%Y-%m-%d"),
-            "Reading Time": post.get("reading_time", "N/A"),
-            "Tags": ", ".join(post.get("seo_tags", [])),
-            "Summary": post.get("summary_bullets", ""),
-            "Link": f"https://kaveeshagim.github.io/ai-content-creator-agent/{post['slug']}.html"
-        })
+        export_data.append(
+            {
+                "Title": post.get("slug", "").replace("-", " ").title(),
+                "Date": post.get("date").strftime("%Y-%m-%d"),
+                "Reading Time": post.get("reading_time", "N/A"),
+                "Tags": ", ".join(post.get("seo_tags", [])),
+                "Summary": post.get("summary_bullets", ""),
+                "Link": f"https://kaveeshagim.github.io/ai-content-creator-agent/{post['slug']}.html",
+            }
+        )
 
     df_export = pd.DataFrame(export_data)
 
@@ -265,7 +318,7 @@ elif page == "📊 MCP Analytics Dashboard":
         "📥 Download All Metadata as CSV",
         csv,
         file_name="blog_metadata.csv",
-        mime="text/csv"
+        mime="text/csv",
     )
 
     st.subheader("📊 Blog Generation Trends")
@@ -297,7 +350,8 @@ elif page == "📊 MCP Analytics Dashboard":
         try:
             avg_time = sum(
                 int(post["reading_time"].split()[0])
-                for post in all_posts if "reading_time" in post
+                for post in all_posts
+                if "reading_time" in post
             ) / len(all_posts)
             col2.metric("⏱ Avg Reading Time", f"{round(avg_time)} min")
         except:
@@ -308,7 +362,6 @@ elif page == "📊 MCP Analytics Dashboard":
         ]
         col3.metric("🏷️ Unique Tags", len(set(all_tags)))
 
-
     st.subheader("📆 Blog Posting Heatmap")
 
     # Extract blog post dates
@@ -317,9 +370,10 @@ elif page == "📊 MCP Analytics Dashboard":
     df_grouped = df_dates.groupby(df_dates.index).count()
 
     # ✅ Unpack (fig, ax) from calplot
-    fig, _ = calplot.calplot(df_grouped, cmap="YlGnBu", colorbar=True, suptitle="Blog Posts per Day")
+    fig, _ = calplot.calplot(
+        df_grouped, cmap="YlGnBu", colorbar=True, suptitle="Blog Posts per Day"
+    )
     st.pyplot(fig)
-
 
     # ─────────────────────────────────────
     # 🔹 SEO Tag Frequency Bar Chart
@@ -345,7 +399,6 @@ elif page == "📊 MCP Analytics Dashboard":
     # ─────────────────────────────────────
     search_query = st.text_input("🔍 Search by keyword in title or summary")
 
-
     # ─────────────────────────────────────
     # 🔎 Filter by SEO Tags
     # ─────────────────────────────────────
@@ -358,7 +411,8 @@ elif page == "📊 MCP Analytics Dashboard":
     # First filter by tags
     if selected_tags:
         filtered_posts = [
-            post for post in all_posts_sorted
+            post
+            for post in all_posts_sorted
             if any(tag in post.get("seo_tags", []) for tag in selected_tags)
         ]
     else:
@@ -367,7 +421,8 @@ elif page == "📊 MCP Analytics Dashboard":
     # Then apply keyword search on the already tag-filtered posts
     if search_query:
         filtered_posts = [
-            post for post in filtered_posts
+            post
+            for post in filtered_posts
             if search_query.lower() in post["slug"].lower()
             or search_query.lower() in post.get("summary_bullets", "").lower()
         ]
