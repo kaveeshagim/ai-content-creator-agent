@@ -2,6 +2,7 @@ import os
 import schedule
 import time
 from main import generate_blog, generate_captions, save_outputs
+from agents import citation_inserter_agent
 from utils import generate_trending_topics
 
 def auto_generate_blog():
@@ -11,7 +12,8 @@ def auto_generate_blog():
 
     blog = generate_blog(first_topic)
     captions = generate_captions(first_topic)
-    save_outputs(first_topic, blog, captions)
+    citations = citation_inserter_agent(blog)
+    save_outputs(first_topic, blog, captions, citations)
     print(f"✅ Generated: {first_topic}")
 
 # Schedule once a day at 9 AM

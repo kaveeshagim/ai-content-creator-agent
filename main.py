@@ -10,7 +10,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner,auto_git_push
-from agents import writer_agent, seo_agent, social_agent, editor_agent
+from agents import writer_agent, seo_agent, social_agent, editor_agent, citation_inserter_agent
 
 # load .env file
 load_dotenv()
@@ -155,5 +155,7 @@ if __name__ == "__main__":
     print("\n📣 Social Media Captions:\n")
     print(captions)
 
+    citations = citation_inserter_agent(blog)
+
     #save to local files
-    save_outputs(topic, blog, captions)
+    save_outputs(topic, blog, captions, citations)
