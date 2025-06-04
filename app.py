@@ -218,7 +218,7 @@ elif page == "📅 Calendar View":
 
         st.markdown("### 🔗 Blog Links")
         for _, row in df.iterrows():
-            link = f"[{row['title']}]({f'https://kaveeshagim.github.io/ai-content-creator-agent/{row['slug']}.html'})"
+            link = f"[{row['title']}](https://kaveeshagim.github.io/ai-content-creator-agent/{row['slug']}.html)"
             st.markdown(f"📌 {row['date']}: {link}")
     else:
         st.info("No blogs generated yet.")

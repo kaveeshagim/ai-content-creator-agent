@@ -10,7 +10,7 @@ def auto_generate_blog():
     first_topic = topics[0].lstrip("1234567890. ").strip()
 
     blog = generate_blog(first_topic)
-    captions = generate_captions(blog)
+    captions = generate_captions(first_topic)
     save_outputs(first_topic, blog, captions)
     print(f"✅ Generated: {first_topic}")
 
