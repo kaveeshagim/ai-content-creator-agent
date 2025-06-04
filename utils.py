@@ -10,6 +10,10 @@ from xml.dom.minidom import parseString
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from PIL import Image, ImageDraw, ImageFont
+from dotenv import load_dotenv
+import openai
+import requests
+import base64
 
 TOPIC_MEMORY_FILE = "memory/topics.json"
 
@@ -300,6 +304,35 @@ def create_share_banner(title, slug):
 
     path = f"banners/{slug}.png"
     img.save(path)
+    return path
+
+def create_dalle_banner(title, slug):
+    """Generate a banner image using OpenAI's DALL-E API."""
+    load_dotenv()
+    api_key = os.getenv("DALLE_API_KEY") or os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OpenAI API key not provided.")
+
+    client = openai.OpenAI(api_key=api_key)
+    prompt = f"Social media banner with the text '{title}' on a clean dark background"
+
+    try:
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            n=1,
+            size="1024x576",
+            response_format="b64_json",
+        )
+        image_data = response.data[0].b64_json
+    except Exception as e:
+        print(f"DALL-E generation failed: {e}")
+        return None
+
+    os.makedirs("banners", exist_ok=True)
+    path = f"banners/{slug}_dalle.png"
+    with open(path, "wb") as f:
+        f.write(base64.b64decode(image_data))
     return path
 
 def auto_git_push():
