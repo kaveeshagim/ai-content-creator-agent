@@ -116,6 +116,17 @@
   npm run dev
   ```
 
+### 📚 API Endpoints
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| `POST` | `/generate` | Generate blog content from a topic |
+| `GET`  | `/suggest-topics?category=tech` | Get trending topic ideas |
+| `GET`  | `/check-topic` | Check if a blog slug exists and get a rewrite |
+| `POST` | `/save` | Save blog, captions, and citations |
+| `GET`  | `/calendar` | Return calendar data of published blogs |
+| `GET`  | `/analytics` | Aggregate metadata for dashboard |
+
 ---
 
 Want to build your own AI-powered publishing assistant?

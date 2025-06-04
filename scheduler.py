@@ -17,7 +17,7 @@ def auto_generate_blog():
     print(f"✅ Generated: {first_topic}")
 
 # Schedule once a day at 9 AM
-schedule.every().day.at("01:11").do(auto_generate_blog)
+schedule.every().day.at("09:00").do(auto_generate_blog)
 
 print("🕒 Blog Scheduler started... Press Ctrl+C to stop.")
 while True:
