@@ -26,6 +26,7 @@
 - 📤 Auto-push to GitHub Pages for hosting + RSS feed
 - 📰 Auto-publish to Dev.to via RSS
 - 🎛️ Streamlit UI with queue system, trending topics, outline editing
+- ⏰ Optional Google Calendar sync for scheduled posts
 - 📊 Built-in Analytics Dashboard (reading time, tags, calendar heatmap)
 
 ---
@@ -103,6 +104,8 @@
 
 1. Copy `.env.example` to `.env` and fill in your API keys.
 2. Install the dependencies with `pip install -r requirements.txt`.
+3. To sync blog posts with Google Calendar, set `ENABLE_GOOGLE_CALENDAR=true` in
+   `.env` and provide your Google credentials (`credentials.json`).
 
 ### 🚀 Run the Components
 

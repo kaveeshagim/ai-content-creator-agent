@@ -9,8 +9,28 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner,create_dalle_banner,auto_git_push
-from agents import writer_agent, seo_agent, social_agent, editor_agent, citation_inserter_agent
+from utils import (
+    convert_markdown_to_html,
+    generate_rss_feed,
+    add_topic_to_memory,
+    topic_already_exists,
+    generate_blog_metadata,
+    rewrite_topic,
+    summarize_blog,
+    estimate_reading_time,
+    generate_tweet_thread,
+    generate_linkedin_post,
+    create_share_banner,
+    create_dalle_banner,
+    auto_git_push,
+)
+from agents import (
+    writer_agent,
+    seo_agent,
+    social_agent,
+    editor_agent,
+    citation_inserter_agent,
+)
 
 # load .env file
 load_dotenv()
@@ -19,19 +39,26 @@ load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
 
 # initialize the OpenAI chat model
-llm = ChatOpenAI(model_name="gpt-4o", temperature=0.5, max_tokens=800, openai_api_key=openai_key, )
- 
-def slugify(text):
-    return re.sub(r'[\W_]+', '-', text.lower()).strip('-')
+llm = ChatOpenAI(
+    model_name="gpt-4o",
+    temperature=0.5,
+    max_tokens=800,
+    openai_api_key=openai_key,
+)
 
-def save_outputs(topic, blog, captions,citations):
+
+def slugify(text):
+    return re.sub(r"[\W_]+", "-", text.lower()).strip("-")
+
+
+def save_outputs(topic, blog, captions, citations):
     slug = slugify(topic)
     if topic_already_exists(slug):
         print(f"⚠️ Topic '{topic}' already exists.")
 
         rewritten = rewrite_topic(topic)
         print(f"🔁 Suggested alternative: {rewritten}")
-        
+
         choice = input("(s)kip / (r)egenerate with suggested / (o)verwrite? ").lower()
         if choice == "s":
             print("⏭️ Skipped.")
@@ -39,7 +66,6 @@ def save_outputs(topic, blog, captions,citations):
         elif choice == "r":
             topic = rewritten
             slug = slugify(topic)
-
 
     os.makedirs("blogs", exist_ok=True)
     os.makedirs("captions", exist_ok=True)
@@ -92,18 +118,27 @@ def save_outputs(topic, blog, captions,citations):
     print(f"✅ Metadata saved to metadata/{slug}.json")
     auto_git_push()
 
-    # ✅ Schedule on Google Calendar (e.g. for next day at 9 AM)
-    # scheduled_time = datetime.now().replace(hour=9, minute=0, second=0) + timedelta(days=1)
-    # create_blog_event(topic, scheduled_time)
+    if os.getenv("ENABLE_GOOGLE_CALENDAR", "false").lower() == "true":
+        try:
+            create_blog_event(topic, datetime.now())
+        except Exception as e:
+            print("ℹ️ Google Calendar event failed:", e)
 
-    # print(f"📅 Google Calendar event scheduled for: {scheduled_time}")
 
 # function to generate blog content
 def generate_blog(topic):
-    prompt_template = ChatPromptTemplate.from_messages([
-        ("system", "You are a professional tech blog writer. Your writing should be clear, informative, and easy to understand."),
-        ("human", "Write a blog post on the topic: '{topic}'. Include:\n- An engaging introduction\n- Subheadings with clear explanations\n- Bullet points when relevant\n- A strong conclusion.")
-    ])
+    prompt_template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a professional tech blog writer. Your writing should be clear, informative, and easy to understand.",
+            ),
+            (
+                "human",
+                "Write a blog post on the topic: '{topic}'. Include:\n- An engaging introduction\n- Subheadings with clear explanations\n- Bullet points when relevant\n- A strong conclusion.",
+            ),
+        ]
+    )
 
     prompt = prompt_template.format_messages(topic=topic)
     response = llm.invoke(prompt)
@@ -111,10 +146,15 @@ def generate_blog(topic):
 
 
 def generate_captions(topic):
-    prompt_template = ChatPromptTemplate.from_messages([
-        ("system", "You are a social media strategist."),
-        ("human", "Create engaging captions for the topic: '{topic}'\nReturn:\n- A short tweet\n- A LinkedIn post\n- An Instagram caption with emojis")
-    ])
+    prompt_template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a social media strategist."),
+            (
+                "human",
+                "Create engaging captions for the topic: '{topic}'\nReturn:\n- A short tweet\n- A LinkedIn post\n- An Instagram caption with emojis",
+            ),
+        ]
+    )
 
     prompt = prompt_template.format_messages(topic=topic)
     response = llm.invoke(prompt)
@@ -130,12 +170,12 @@ if __name__ == "__main__":
     print("\n📝 Generated Blog Post:\n")
     print(blog)
 
-    #generate captions
+    # generate captions
     captions = generate_captions(topic)
     print("\n📣 Social Media Captions:\n")
     print(captions)
 
     citations = citation_inserter_agent(blog)
 
-    #save to local files
+    # save to local files
     save_outputs(topic, blog, captions, citations)
