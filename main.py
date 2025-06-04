@@ -117,29 +117,6 @@ def generate_captions(topic):
     response = llm.invoke(prompt)
     return response.content
 
-def convert_markdown_to_html(markdown_text, title, slug):
-    html_content = markdown.markdown(markdown_text)
-
-    # Basic HTML wrapper (can improve later)
-    full_html = f"""
-    <html>
-    <head>
-        <title>{title}</title>
-        <meta charset="UTF-8">
-    </head>
-    <body>
-        <h1>{title}</h1>
-        {html_content}
-    </body>
-    </html>
-    """
-
-    # Save it
-    os.makedirs("docs", exist_ok=True)
-    with open(f"docs/{slug}.html", "w", encoding="utf-8") as f:
-        f.write(full_html)
-
-    return f"https://kaveeshagim.github.io/ai-content-creator-agent/{slug}.html"  # Update later with real domain
 
 # run this part if the script is executed directly
 if __name__ == "__main__":
