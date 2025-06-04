@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner,auto_git_push
+from utils import convert_markdown_to_html, generate_rss_feed,add_topic_to_memory, topic_already_exists,generate_blog_metadata,rewrite_topic,summarize_blog,estimate_reading_time,generate_tweet_thread,generate_linkedin_post,create_share_banner,create_dalle_banner,auto_git_push
 from agents import writer_agent, seo_agent, social_agent, editor_agent, citation_inserter_agent
 
 # load .env file
@@ -79,7 +79,10 @@ def save_outputs(topic, blog, captions,citations):
     metadata["reading_time"] = estimate_reading_time(blog)
     metadata["tweet_thread"] = generate_tweet_thread(blog)
     metadata["linkedin_post"] = generate_linkedin_post(blog)
-    metadata["share_banner"] = create_share_banner(title=topic, slug=slug)
+    banner_path = create_dalle_banner(title=topic, slug=slug)
+    if not banner_path:
+        banner_path = create_share_banner(title=topic, slug=slug)
+    metadata["share_banner"] = banner_path
     metadata["social_posts"] = socials
 
     os.makedirs("metadata", exist_ok=True)
