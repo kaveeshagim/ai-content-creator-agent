@@ -104,6 +104,18 @@
 1. Copy `.env.example` to `.env` and fill in your API keys.
 2. Install the dependencies with `pip install -r requirements.txt`.
 
+### 🚀 Run the Components
+
+- **CLI:** `python main.py`
+- **Streamlit UI:** `streamlit run app.py`
+- **FastAPI API:** `uvicorn api:app --reload`
+- **React UI:**
+  ```bash
+  cd ai-content-creator-ui
+  npm install
+  npm run dev
+  ```
+
 ---
 
 Want to build your own AI-powered publishing assistant?
